@@ -5,7 +5,16 @@ A CMRA in Oakland scans mail for unhoused clients; clients, approved case manage
 Build guide (source of truth for features, data model, phases): https://claude.ai/artifact/CULR1wp6nocsBNiC2EW1oP
 
 ## Stack
-Next.js 15 App Router + TypeScript, Tailwind + shadcn/ui, Prisma + Postgres (Neon), Cloudflare R2 (private bucket, S3 SDK), Auth.js credentials login, Twilio SMS, Resend email, Vercel hosting. PWA.
+Next.js 15 App Router + TypeScript, Tailwind + shadcn/ui, Prisma 6 + Postgres (Neon), Neon Object Storage (private bucket `mail`, S3 SDK; replaces Cloudflare R2 from the guide), Auth.js credentials login, Twilio SMS, Resend email, Vercel hosting. PWA.
+
+## Neon setup
+- Neon project "client portal" (delicate-dawn-76179495, aws-us-east-2). Services are declared in `neon.ts`.
+- Local work uses the `dev` database branch (`neon checkout dev`); test data never goes on `production`.
+- `neon link` / `neon checkout` write the Neon env vars to `.env.local` (git-ignored). The npm `db:*` scripts load `.env.local` for Prisma.
+- Never run `neon deploy` or migrations against `production` without the owner's OK.
+
+## Branding
+Match the shop flier: dark background (#1c1a1d), neon teal (#7fe3d4), pink (#f48fb1), yellow (#ffd166); rocket logo. Shop: 4051 Foothill Blvd, Oakland, CA 94604, (415) 725-1603. Pricing on the flier: $15/month, 90-day minimum.
 
 ## Roles
 - CLIENT: PMB number + 6-digit PIN
