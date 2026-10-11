@@ -9,8 +9,8 @@ export function AppShell({ name, children }: { name: string; children: React.Rea
   }
 
   return (
-    <div className="min-h-screen bg-[#1c1a1d] text-[#e8f4f0]">
-      <header className="flex items-center justify-between border-b border-[#7fe3d4]/40 px-4 py-3">
+    <div className="min-h-screen bg-[#1c1a1d] text-[#e8f4f0] print:bg-white">
+      <header className="flex items-center justify-between border-b border-[#7fe3d4]/40 px-4 py-3 print:hidden">
         <Link href="/home" className="text-lg font-extrabold [text-shadow:0_0_8px_#7fe3d4]">
           Post <span className="text-[#f48fb1]">&amp;</span> Stuff
         </Link>

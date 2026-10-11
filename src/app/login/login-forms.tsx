@@ -8,7 +8,7 @@ import { clientLogin, staffLogin, type LoginState } from "./actions";
 
 const field = "h-14 text-lg";
 
-export function LoginForms() {
+export function LoginForms({ defaultPmb = "" }: { defaultPmb?: string }) {
   const [mode, setMode] = useState<"client" | "staff">("client");
   // Controlled so the email and password survive when the 2-step code box appears.
   const [email, setEmail] = useState("");
@@ -24,7 +24,14 @@ export function LoginForms() {
             <Label htmlFor="pmbNumber" className="text-base">
               Mailbox number
             </Label>
-            <Input id="pmbNumber" name="pmbNumber" autoComplete="username" required className={field} />
+            <Input
+              id="pmbNumber"
+              name="pmbNumber"
+              autoComplete="username"
+              required
+              defaultValue={defaultPmb}
+              className={field}
+            />
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="pin" className="text-base">

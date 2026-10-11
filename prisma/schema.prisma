@@ -74,6 +74,7 @@ enum AuditAction {
   DOWNLOAD
   LOGIN
   LOGIN_FAILED
+  PIN_RESET
 }
 
 enum InvoiceStatus {

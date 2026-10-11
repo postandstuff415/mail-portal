@@ -14,7 +14,7 @@ Next.js 15 App Router + TypeScript, Tailwind + shadcn/ui, Prisma 6 + Postgres (N
 - Never run `neon deploy` or migrations against `production` without the owner's OK.
 
 ## Domain
-postandstuff.com (bought 2026-10-11 at Squarespace; DNS records are edited in Squarespace > Domains > DNS). Not yet pointed at Vercel. Plan: portal at mail.postandstuff.com (CNAME to Vercel), root left for a shop homepage, unless the owner says otherwise. Email sends from this domain once verified in Resend.
+postandstuff.com (bought 2026-10-11 at Squarespace; DNS records are edited in Squarespace > Domains > DNS). Not yet pointed at Vercel. The portal lives at the root, https://postandstuff.com (owner's choice). Email sends from this domain once verified in Resend.
 
 ## Branding
 Match the shop flier: dark background (#1c1a1d), neon teal (#7fe3d4), pink (#f48fb1), yellow (#ffd166); rocket logo. Shop: 4051 Foothill Blvd, Oakland, CA 94604, (415) 725-1603. Pricing on the flier: $15/month, 90-day minimum.

@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { generateSecret } from "otplib";
 import { db } from "@/lib/db";
+import { deleteMailImage } from "@/lib/storage";
 
 // Throwaway test records with a unique tag, removed again by cleanup().
 
@@ -25,7 +26,15 @@ export async function createFixtures() {
 
   const mkClient = (suffix: string, orgId = org.id) =>
     db.client.create({
-      data: { pmbNumber: `VT${tag}${suffix}`, firstName: `Test${suffix}`, lastName: tag, pinHash, orgId },
+      data: {
+        pmbNumber: `VT${tag}${suffix}`,
+        firstName: `Test${suffix}`,
+        lastName: tag,
+        pinHash,
+        orgId,
+        form1583OnFile: true,
+        phone: `+1510555${tag.slice(0, 2).replace(/\D/g, "0")}0${suffix.charCodeAt(0) % 10}`,
+      },
     });
   const clientA = await mkClient("A");
   const clientB = await mkClient("B");
@@ -73,9 +82,16 @@ export type Fixtures = Awaited<ReturnType<typeof createFixtures>>;
 
 export async function cleanup(f: Fixtures | undefined) {
   if (!f) return;
-  const clientIds = [f.clientA.id, f.clientB.id, f.clientC.id];
+  // Includes clients a test created itself in the fixture orgs.
+  const clientIds = (
+    await db.client.findMany({ where: { orgId: { in: [f.org.id, f.otherOrg.id] } }, select: { id: true } })
+  ).map((c) => c.id);
   const userIds = [f.staff.id, f.staffNo2fa.id, f.caseManager.id, f.orgAdmin.id];
   await db.auditLog.deleteMany({ where: { OR: [{ clientId: { in: clientIds } }, { userId: { in: userIds } }] } });
+  const images = await db.mailImage.findMany({ where: { mailItem: { clientId: { in: clientIds } } } });
+  for (const img of images) await deleteMailImage(img.r2Key).catch(() => {});
+  await db.mailImage.deleteMany({ where: { id: { in: images.map((i) => i.id) } } });
+  await db.request.deleteMany({ where: { mailItem: { clientId: { in: clientIds } } } });
   await db.mailItem.deleteMany({ where: { clientId: { in: clientIds } } });
   await db.delegate.deleteMany({ where: { clientId: { in: clientIds } } });
   await db.client.deleteMany({ where: { id: { in: clientIds } } });

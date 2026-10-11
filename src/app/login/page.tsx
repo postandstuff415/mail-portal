@@ -3,7 +3,8 @@ import { auth } from "@/auth";
 import { homeFor } from "@/lib/session";
 import { LoginForms } from "./login-forms";
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ pmb?: string }> }) {
+  const { pmb } = await searchParams;
   const session = await auth();
   if (session?.user?.role) redirect(homeFor(session.user.role));
 
@@ -13,7 +14,8 @@ export default async function LoginPage() {
         <h1 className="text-center text-3xl font-extrabold text-[#e8f4f0] [text-shadow:0_0_12px_#7fe3d4]">
           Post <span className="text-[#f48fb1]">&amp;</span> Stuff Mail
         </h1>
-        <LoginForms />
+        {/* The QR on a client's intake card opens /login?pmb=… with their number filled in. */}
+        <LoginForms defaultPmb={typeof pmb === "string" ? pmb.slice(0, 20) : ""} />
         <p className="text-center text-sm text-[#e8f4f0]/80">
           Forgot your PIN? Come by the shop or call{" "}
           <a href="tel:+14157251603" className="text-[#ffd166] underline">
