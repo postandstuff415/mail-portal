@@ -16,6 +16,10 @@ Next.js 15 App Router + TypeScript, Tailwind + shadcn/ui, Prisma 6 + Postgres (N
 ## Branding
 Match the shop flier: dark background (#1c1a1d), neon teal (#7fe3d4), pink (#f48fb1), yellow (#ffd166); rocket logo. Shop: 4051 Foothill Blvd, Oakland, CA 94604, (415) 725-1603. Pricing on the flier: $15/month, 90-day minimum.
 
+## Billing rules (owner decisions, locked)
+- Nonprofits only. Clients are never billed; every client belongs to a partner organization that pays.
+- $15 per active client per month, with a 90-day minimum per client enrollment (bill at least 3 months even if the client leaves sooner).
+
 ## Roles
 - CLIENT: PMB number + 6-digit PIN
 - CASE_MANAGER, ORG_ADMIN, STAFF, ADMIN: email + password
