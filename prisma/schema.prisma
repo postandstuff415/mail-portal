@@ -1,0 +1,248 @@
+// Post and Stuff Mail Portal database schema.
+// Tables follow the "Data model" section of the build guide.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum BillingTerms {
+  NET30
+  NET60
+}
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+  CLOSED
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+  CASE_MANAGER
+  ORG_ADMIN
+}
+
+enum MailType {
+  LETTER
+  FLAT
+  PACKAGE
+}
+
+enum MailStatus {
+  RECEIVED
+  SCAN_REQUESTED
+  OPENED
+  READY_FOR_PICKUP
+  PICKED_UP
+  RETURNED
+  SHREDDED
+}
+
+enum ImageKind {
+  ENVELOPE
+  CONTENTS
+}
+
+enum RequestType {
+  OPEN_AND_SCAN
+  HOLD
+  PICKUP
+  DISCARD
+}
+
+enum RequestStatus {
+  OPEN
+  DONE
+  CANCELLED
+}
+
+enum PickupMethod {
+  CODE
+  ID
+}
+
+enum AuditAction {
+  VIEW
+  UPLOAD
+  DOWNLOAD
+  LOGIN
+  LOGIN_FAILED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+}
+
+model Organization {
+  id           String       @id @default(cuid())
+  name         String
+  contactName  String?
+  contactEmail String?
+  contactPhone String?
+  billingTerms BillingTerms @default(NET30)
+  monthlyRate  Decimal      @default(15.00) @db.Decimal(10, 2)
+  createdAt    DateTime     @default(now())
+
+  clients  Client[]
+  users    User[]
+  invoices Invoice[]
+}
+
+model Client {
+  id             String       @id @default(cuid())
+  pmbNumber      String       @unique
+  firstName      String
+  lastName       String
+  phone          String?
+  pinHash        String
+  orgId          String
+  status         ClientStatus @default(ACTIVE)
+  form1583OnFile Boolean      @default(false)
+  idExpiresAt    DateTime?
+  holdMonths     Int          @default(12)
+  // Login lockout: 5 wrong PINs locks the account for 15 minutes.
+  failedLogins   Int          @default(0)
+  lockedUntil    DateTime?
+  createdAt      DateTime     @default(now())
+
+  org       Organization @relation(fields: [orgId], references: [id])
+  mailItems MailItem[]
+  delegates Delegate[]
+  auditLogs AuditLog[]
+
+  @@index([orgId])
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String?
+  passwordHash    String
+  role            UserRole
+  orgId           String?
+  twoFactorSecret String?
+  failedLogins    Int       @default(0)
+  lockedUntil     DateTime?
+  createdAt       DateTime  @default(now())
+
+  org       Organization? @relation(fields: [orgId], references: [id])
+  delegates Delegate[]
+  requests  Request[]
+  pickups   Pickup[]
+  auditLogs AuditLog[]
+}
+
+// Who may see whose mail (case managers, caregivers).
+model Delegate {
+  id         String    @id @default(cuid())
+  clientId   String
+  userId     String
+  approvedAt DateTime  @default(now())
+  revokedAt  DateTime?
+
+  client Client @relation(fields: [clientId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([clientId, userId])
+}
+
+model MailItem {
+  id            String     @id @default(cuid())
+  clientId      String
+  receivedAt    DateTime   @default(now())
+  sender        String?
+  type          MailType   @default(LETTER)
+  urgent        Boolean    @default(false)
+  status        MailStatus @default(RECEIVED)
+  shelfLocation String?
+  retainUntil   DateTime
+
+  client    Client      @relation(fields: [clientId], references: [id])
+  images    MailImage[]
+  requests  Request[]
+  pickups   Pickup[]
+  auditLogs AuditLog[]
+
+  @@index([clientId, receivedAt])
+  @@index([retainUntil])
+}
+
+model MailImage {
+  id         String    @id @default(cuid())
+  mailItemId String
+  kind       ImageKind
+  r2Key      String    @unique
+  pageNumber Int       @default(1)
+  createdAt  DateTime  @default(now())
+
+  mailItem MailItem @relation(fields: [mailItemId], references: [id])
+}
+
+model Request {
+  id            String        @id @default(cuid())
+  mailItemId    String
+  // Null when the client made the request themselves (clients aren't Users).
+  requestedById String?
+  type          RequestType
+  status        RequestStatus @default(OPEN)
+  createdAt     DateTime      @default(now())
+
+  mailItem    MailItem @relation(fields: [mailItemId], references: [id])
+  requestedBy User?    @relation(fields: [requestedById], references: [id])
+
+  @@index([status])
+}
+
+model Pickup {
+  id                String       @id @default(cuid())
+  mailItemId        String
+  pickedUpAt        DateTime     @default(now())
+  verifiedById      String
+  method            PickupMethod
+  signatureImageKey String?
+
+  mailItem   MailItem @relation(fields: [mailItemId], references: [id])
+  verifiedBy User     @relation(fields: [verifiedById], references: [id])
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  userId     String?
+  clientId   String?
+  action     AuditAction
+  mailItemId String?
+  ip         String?
+  at         DateTime    @default(now())
+
+  user     User?     @relation(fields: [userId], references: [id])
+  client   Client?   @relation(fields: [clientId], references: [id])
+  mailItem MailItem? @relation(fields: [mailItemId], references: [id])
+
+  @@index([at])
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  orgId         String
+  periodStart   DateTime
+  periodEnd     DateTime
+  activeClients Int
+  amount        Decimal       @db.Decimal(10, 2)
+  dueDate       DateTime
+  status        InvoiceStatus @default(DRAFT)
+  createdAt     DateTime      @default(now())
+
+  org Organization @relation(fields: [orgId], references: [id])
+
+  @@unique([orgId, periodStart])
+}
