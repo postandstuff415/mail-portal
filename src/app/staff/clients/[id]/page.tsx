@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { activeDelegates } from "@/lib/delegates";
 import { mailForClient } from "@/lib/mail-queries";
 import { requireStaff } from "@/lib/session";
-import { revokeDelegateAction } from "./actions";
+import { endEnrollmentAction, reenrollAction, revokeDelegateAction } from "./actions";
 import { DelegateForm } from "./delegate-form";
 
 const PT = { timeZone: "America/Los_Angeles" } as const;
@@ -46,7 +46,30 @@ export default async function StaffClientPage({ params }: { params: Promise<{ id
         <dd>{client.form1583OnFile ? "on file" : "MISSING"}</dd>
         <dt className="opacity-70">ID expires</dt>
         <dd>{client.idExpiresAt ? client.idExpiresAt.toLocaleDateString("en-US", PT) : "not recorded"}</dd>
+        <dt className="opacity-70">Enrolled</dt>
+        <dd>
+          {client.enrolledAt.toLocaleDateString("en-US", PT)}
+          {client.endedAt && ` · ended ${client.endedAt.toLocaleDateString("en-US", PT)}`}
+        </dd>
       </dl>
+      <form
+        action={client.status === "ACTIVE" ? endEnrollmentAction.bind(null, id) : reenrollAction.bind(null, id)}
+        className="mt-3"
+      >
+        <button
+          type="submit"
+          className={`rounded-md border px-3 py-2 ${
+            client.status === "ACTIVE" ? "border-[#f48fb1] text-[#f48fb1]" : "border-[#7fe3d4] text-[#7fe3d4]"
+          }`}
+        >
+          {client.status === "ACTIVE" ? "End enrollment (stops mail and billing)" : "Re-enroll client"}
+        </button>
+        {client.status === "ACTIVE" && (
+          <span className="mt-1 block text-sm opacity-70">
+            The nonprofit is still billed through the first 3 months of the enrollment.
+          </span>
+        )}
+      </form>
       <p className="mt-3 flex gap-4">
         <Link href={`/staff/clients/${id}/card`} className="text-[#ffd166] underline">
           Print card

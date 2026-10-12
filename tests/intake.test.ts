@@ -106,12 +106,8 @@ describe("receiving mail", () => {
     expect(saved.images).toHaveLength(1);
     expect(saved.images[0].r2Key).toMatch(new RegExp(`^mail/${f.clientA.id}/`));
 
-    // Hold date = received + the client's hold period (12 months by default).
-    const months =
-      (saved.retainUntil.getFullYear() - saved.receivedAt.getFullYear()) * 12 +
-      saved.retainUntil.getMonth() -
-      saved.receivedAt.getMonth();
-    expect(months).toBe(12);
+    // Hold date = received + 90 days.
+    expect(saved.retainUntil.getTime() - saved.receivedAt.getTime()).toBe(90 * 24 * 60 * 60 * 1000);
 
     // The photo can be fetched with a signed link, and NOT without one.
     const signed = await signedImageUrl(saved.images[0].r2Key);

@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/staff", label: "Clients" },
   { href: "/staff/orgs", label: "Nonprofits" },
   { href: "/staff/people", label: "People" },
+  { href: "/staff/invoices", label: "Invoices" },
 ];
 
 export function StaffNav() {

@@ -6,12 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { changePasswordAction, type PasswordState } from "./actions";
 
-export function PasswordForm() {
+export function PasswordForm({ currentLabel }: { currentLabel: string }) {
   const [state, action, pending] = useActionState<PasswordState, FormData>(changePasswordAction, {});
-  if (state.ok) return <p className="rounded-lg bg-[#7fe3d4] p-3 font-semibold text-[#1c1a1d]">Password changed.</p>;
   return (
     <form action={action} className="flex flex-col gap-3">
-      <Label htmlFor="current">Current password</Label>
+      <Label htmlFor="current">{currentLabel}</Label>
       <Input id="current" name="current" type="password" autoComplete="current-password" required className="h-12" />
       <Label htmlFor="next">New password (12+ characters)</Label>
       <Input id="next" name="next" type="password" autoComplete="new-password" minLength={12} required className="h-12" />

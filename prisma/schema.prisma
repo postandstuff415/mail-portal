@@ -110,33 +110,42 @@ model Client {
   status         ClientStatus @default(ACTIVE)
   form1583OnFile Boolean      @default(false)
   idExpiresAt    DateTime?
-  holdMonths     Int          @default(12)
+  // Owner policy: mail is held 90 days, then returned to sender or shredded.
+  holdDays       Int          @default(90)
   // When the client agreed (signed intake form) to text alerts. Null = never text.
   smsConsentAt   DateTime?
   // Login lockout: 5 wrong PINs locks the account for 15 minutes.
   failedLogins   Int          @default(0)
   lockedUntil    DateTime?
   createdAt      DateTime     @default(now())
+  // Billing: the nonprofit pays from the enrollment month, at least 3 months
+  // (90-day minimum), and through the month the enrollment ends.
+  enrolledAt     DateTime     @default(now())
+  endedAt        DateTime?
 
-  org       Organization @relation(fields: [orgId], references: [id])
-  mailItems MailItem[]
-  delegates Delegate[]
-  auditLogs AuditLog[]
+  org          Organization  @relation(fields: [orgId], references: [id])
+  mailItems    MailItem[]
+  delegates    Delegate[]
+  auditLogs    AuditLog[]
+  invoiceLines InvoiceLine[]
 
   @@index([orgId])
 }
 
 model User {
-  id              String    @id @default(cuid())
-  email           String    @unique
-  name            String?
-  passwordHash    String
-  role            UserRole
-  orgId           String?
-  twoFactorSecret String?
-  failedLogins    Int       @default(0)
-  lockedUntil     DateTime?
-  createdAt       DateTime  @default(now())
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  name               String?
+  passwordHash       String
+  role               UserRole
+  orgId              String?
+  twoFactorSecret    String?
+  failedLogins       Int       @default(0)
+  lockedUntil        DateTime?
+  // Set when staff create the account or reset the password: the person must
+  // pick their own password before doing anything else.
+  mustChangePassword Boolean   @default(false)
+  createdAt          DateTime  @default(now())
 
   org       Organization? @relation(fields: [orgId], references: [id])
   delegates Delegate[]
@@ -244,8 +253,28 @@ model Invoice {
   dueDate       DateTime
   status        InvoiceStatus @default(DRAFT)
   createdAt     DateTime      @default(now())
+  // Billing month this invoice covers, as "YYYY-MM" (Pacific time).
+  month         String        @default("")
 
-  org Organization @relation(fields: [orgId], references: [id])
+  org   Organization  @relation(fields: [orgId], references: [id])
+  lines InvoiceLine[]
 
   @@unique([orgId, periodStart])
+}
+
+// One billed client on an invoice, frozen at the time the invoice was made.
+model InvoiceLine {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  clientId    String
+  clientName  String
+  pmbNumber   String
+  amount      Decimal @db.Decimal(10, 2)
+  // True when billed only because of the 90-day minimum (client already left).
+  minimumOnly Boolean @default(false)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  client  Client  @relation(fields: [clientId], references: [id])
+
+  @@unique([invoiceId, clientId])
 }

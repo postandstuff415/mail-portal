@@ -1,20 +1,25 @@
 "use server";
 
+import { redirect } from "next/navigation";
+import { auth, signOut } from "@/auth";
 import { changeOwnPassword, UserError } from "@/lib/users";
-import { requireViewer } from "@/lib/session";
 
-export type PasswordState = { error?: string; ok?: boolean };
+export type PasswordState = { error?: string };
 
 export async function changePasswordAction(_prev: PasswordState, formData: FormData): Promise<PasswordState> {
   void _prev;
-  const viewer = await requireViewer();
+  // Not requireViewer(): people with a temporary password must be able to get here.
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
   const next = String(formData.get("next") ?? "");
   if (next !== String(formData.get("confirm") ?? "")) return { error: "The two new passwords don't match." };
   try {
-    await changeOwnPassword(viewer, String(formData.get("current") ?? ""), next);
-    return { ok: true };
+    await changeOwnPassword(session.user, String(formData.get("current") ?? ""), next);
   } catch (error) {
     if (error instanceof UserError) return { error: error.message };
     throw error;
   }
+  // Start a fresh session with the new password (clears the "must change" flag).
+  await signOut({ redirectTo: "/login?changed=1" });
+  return {};
 }

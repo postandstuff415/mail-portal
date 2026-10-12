@@ -7,7 +7,7 @@ import { authConfig } from "@/auth.config";
 // itself on the server.
 const { auth } = NextAuth(authConfig);
 
-const PROTECTED = ["/mail", "/clients", "/staff", "/account"];
+const PROTECTED = ["/mail", "/clients", "/staff", "/account", "/invoices"];
 
 export default auth((req) => {
   const path = req.nextUrl.pathname;
@@ -15,6 +15,9 @@ export default auth((req) => {
 
   if (!req.auth?.user) {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
+  }
+  if (req.auth.user.mustChangePassword && path !== "/account/password") {
+    return NextResponse.redirect(new URL("/account/password", req.nextUrl));
   }
 });
 

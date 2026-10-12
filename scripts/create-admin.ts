@@ -31,7 +31,7 @@ async function main() {
     if (existing) {
       await db.user.update({
         where: { email },
-        data: { passwordHash, role: "ADMIN", failedLogins: 0, lockedUntil: null },
+        data: { passwordHash, role: "ADMIN", failedLogins: 0, lockedUntil: null, mustChangePassword: false },
       });
       console.log(`Reset password for existing account ${email} on branch ${process.env.NEON_BRANCH ?? "?"}.`);
     } else {

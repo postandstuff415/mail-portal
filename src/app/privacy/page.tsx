@@ -61,7 +61,7 @@ export default function PrivacyPage() {
 
       <h2>How long we keep it</h2>
       <p>
-        We hold physical mail for up to 12 months, or the period in your client agreement, then return it to the
+        We hold physical mail for 90 days, then return it to the
         sender or securely shred it. Envelope photos and records are kept while your mailbox is open and as long as
         USPS rules require after it closes.
       </p>

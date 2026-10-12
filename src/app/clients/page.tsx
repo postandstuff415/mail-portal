@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { isOverdue, monthLabel } from "@/lib/billing";
 import { db } from "@/lib/db";
 import { isStaff, viewableClientIds } from "@/lib/permissions";
 import { requireViewer } from "@/lib/session";
@@ -14,11 +15,29 @@ export default async function ClientsPage() {
   if (isStaff(viewer)) redirect("/staff");
 
   if (viewer.role === "ORG_ADMIN") {
-    const clients = viewer.orgId
-      ? await db.client.findMany({ where: { orgId: viewer.orgId }, orderBy: { lastName: "asc" } })
-      : [];
+    const [clients, invoices] = viewer.orgId
+      ? await Promise.all([
+          db.client.findMany({ where: { orgId: viewer.orgId }, orderBy: { lastName: "asc" } }),
+          db.invoice.findMany({ where: { orgId: viewer.orgId }, orderBy: { periodStart: "desc" }, take: 24 }),
+        ])
+      : [[], []];
     return (
       <AppShell name={viewer.name}>
+        {invoices.length > 0 && (
+          <section className="mb-6">
+            <h2 className="mb-2 text-lg font-semibold">Invoices</h2>
+            <ul className="flex flex-col gap-1">
+              {invoices.map((inv) => (
+                <li key={inv.id}>
+                  <Link href={`/invoices/${inv.id}`} className="text-[#ffd166] underline">
+                    {monthLabel(inv.month)} · ${inv.amount.toFixed(2)} ·{" "}
+                    {isOverdue(inv) ? "overdue" : inv.status.toLowerCase()}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         <h1 className="mb-4 text-2xl font-bold">Your organization&apos;s clients</h1>
         <p className="mb-4 opacity-80">{clients.filter((c) => c.status === "ACTIVE").length} active</p>
         <ul className="flex flex-col gap-2 text-lg">

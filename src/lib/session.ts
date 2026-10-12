@@ -10,6 +10,7 @@ import { isStaff, type Viewer } from "@/lib/permissions";
 export async function requireViewer(): Promise<Viewer & { name: string }> {
   const session = await auth();
   if (!session?.user?.id || !session.user.role) redirect("/login");
+  if (session.user.mustChangePassword) redirect("/account/password");
   return session.user;
 }
 

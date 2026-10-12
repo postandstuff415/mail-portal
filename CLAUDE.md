@@ -22,6 +22,14 @@ Match the shop flier: dark background (#1c1a1d), neon teal (#7fe3d4), pink (#f48
 ## Billing rules (owner decisions, locked)
 - Nonprofits only. Clients are never billed; every client belongs to a partner organization that pays.
 - $15 per active client per month, with a 90-day minimum per client enrollment (bill at least 3 months even if the client leaves sooner).
+- 90-day minimum = option A: billed month by month for the first 3 calendar months of an enrollment (enrollment month counts), never as a lump sum, never twice for one month. Logic in `src/lib/billing.ts`.
+- No late fees. Late payment: pause new enrollments after 30 days past due; may end the agreement after 60.
+
+## Mail handling rules (owner decisions, locked)
+- Mail is held 90 days (`Client.holdDays`), then returned to sender or shredded.
+- Notice of mail only: photograph the envelope; open and scan contents only when the client or their case manager asks. No "always scan" option.
+- Staff create case manager / nonprofit accounts with a temporary password; the person must change it at first login (`User.mustChangePassword`).
+- Client and nonprofit agreements: Claude Docs "Post and Stuff Client Mailbox Agreement" and "Post and Stuff Nonprofit Service Agreement" (approved by the owner's lawyer 2026-10-12).
 
 ## Roles
 - CLIENT: PMB number + 6-digit PIN

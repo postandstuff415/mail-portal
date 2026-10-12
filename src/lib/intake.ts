@@ -104,10 +104,10 @@ export function detectImageType(bytes: Uint8Array): { contentType: string; ext: 
   return null;
 }
 
-function addMonths(date: Date, months: number) {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + months);
-  return d;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function addDays(date: Date, days: number) {
+  return new Date(date.getTime() + days * DAY_MS);
 }
 
 export type ReceiveInput = {
@@ -146,7 +146,7 @@ export async function receiveMail(viewer: Viewer | null | undefined, input: Rece
         urgent: input.urgent,
         shelfLocation: input.shelfLocation?.trim() || null,
         sender: input.sender?.trim() || null,
-        retainUntil: addMonths(receivedAt, client.holdMonths),
+        retainUntil: addDays(receivedAt, client.holdDays),
         images: { create: { kind: "ENVELOPE", r2Key: key, pageNumber: 1 } },
       },
     });

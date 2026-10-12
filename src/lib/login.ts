@@ -12,6 +12,8 @@ export type SessionIdentity = {
   name: string;
   clientId?: string;
   orgId?: string | null;
+  // Logged in with a temporary password: must set their own first.
+  mustChangePassword?: boolean;
 };
 
 export type LoginResult = { ok: true; identity: SessionIdentity } | { ok: false; reason: "invalid" | "locked" };
@@ -107,6 +109,7 @@ export async function loginUser(emailInput: string, password: string, ip: string
       role: user.role,
       name: user.name ?? user.email,
       orgId: user.orgId,
+      mustChangePassword: user.mustChangePassword,
     },
   };
 }

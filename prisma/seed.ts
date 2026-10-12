@@ -79,7 +79,7 @@ async function main() {
         type: types[i % types.length],
         urgent: i % 4 === 0,
         shelfLocation: `A${(i % 3) + 1}`,
-        retainUntil: monthsFrom(receivedAt, client.holdMonths),
+        retainUntil: new Date(receivedAt.getTime() + client.holdDays * 24 * 60 * 60 * 1000),
       },
     });
   }

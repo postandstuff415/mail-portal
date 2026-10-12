@@ -52,6 +52,7 @@ export async function createUser(viewer: Viewer | null | undefined, input: z.inp
       role: data.role,
       orgId: data.orgId || null,
       passwordHash: await bcrypt.hash(password, ROUNDS),
+      mustChangePassword: true,
     },
   });
   return { user, password };
@@ -64,7 +65,12 @@ export async function resetUserPassword(viewer: Viewer | null | undefined, userI
   const password = temporaryPassword();
   await db.user.update({
     where: { id: userId },
-    data: { passwordHash: await bcrypt.hash(password, ROUNDS), failedLogins: 0, lockedUntil: null },
+    data: {
+      passwordHash: await bcrypt.hash(password, ROUNDS),
+      failedLogins: 0,
+      lockedUntil: null,
+      mustChangePassword: true,
+    },
   });
   return { password };
 }
@@ -77,5 +83,8 @@ export async function changeOwnPassword(viewer: Viewer | null | undefined, curre
   }
   if (next.length < MIN_PASSWORD) throw new UserError(`Use at least ${MIN_PASSWORD} characters.`);
   if (next === current) throw new UserError("Pick a password you haven't used here before.");
-  await db.user.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(next, ROUNDS) } });
+  await db.user.update({
+    where: { id: user.id },
+    data: { passwordHash: await bcrypt.hash(next, ROUNDS), mustChangePassword: false },
+  });
 }

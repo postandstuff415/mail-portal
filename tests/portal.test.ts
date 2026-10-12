@@ -128,10 +128,18 @@ describe("delegates", () => {
 describe("accounts and passwords", () => {
   const email = (name: string) => `${name}-${f.tag.toLowerCase()}@vitest-new.example`;
 
-  it("staff add a case manager with a one-time password that works", async () => {
+  it("staff add a case manager with a one-time password; they must change it before anything else", async () => {
     const { user, password } = await createUser(staff, { name: "New CM", email: email("cm"), role: "CASE_MANAGER" });
     expect(password).toMatch(/^[A-Za-z2-9]{7}-[A-Za-z2-9]{7}$/);
-    expect(await loginUser(user.email, password, null)).toMatchObject({ ok: true, identity: { role: "CASE_MANAGER" } });
+    expect(await loginUser(user.email, password, null)).toMatchObject({
+      ok: true,
+      identity: { role: "CASE_MANAGER", mustChangePassword: true },
+    });
+    await changeOwnPassword({ id: user.id, role: "CASE_MANAGER" }, password, "my-own-new-password");
+    expect(await loginUser(user.email, "my-own-new-password", null)).toMatchObject({
+      ok: true,
+      identity: { mustChangePassword: false },
+    });
   });
 
   it("only an admin can add staff accounts", async () => {
@@ -149,7 +157,10 @@ describe("accounts and passwords", () => {
   it("a reset gives a new working password and unlocks the account", async () => {
     await db.user.update({ where: { id: f.caseManager.id }, data: { lockedUntil: new Date(Date.now() + 600000) } });
     const { password } = await resetUserPassword(staff, f.caseManager.id);
-    expect(await loginUser(f.caseManager.email, password, null)).toMatchObject({ ok: true });
+    expect(await loginUser(f.caseManager.email, password, null)).toMatchObject({
+      ok: true,
+      identity: { mustChangePassword: true },
+    });
     await expect(resetUserPassword(staff, f.admin.id)).rejects.toThrow("Only an admin");
   });
 

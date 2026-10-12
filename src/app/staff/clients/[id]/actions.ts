@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { endEnrollment, reenroll } from "@/lib/billing";
 import { addDelegate, DelegateError, revokeDelegate } from "@/lib/delegates";
 import { requireStaff } from "@/lib/session";
 
@@ -17,6 +18,18 @@ export async function addDelegateAction(clientId: string, _prev: DelegateState, 
   }
   revalidatePath(`/staff/clients/${clientId}`);
   return { ok: "Added. They can see this client's mail now." };
+}
+
+export async function endEnrollmentAction(clientId: string) {
+  const staff = await requireStaff();
+  await endEnrollment(staff, clientId);
+  revalidatePath(`/staff/clients/${clientId}`);
+}
+
+export async function reenrollAction(clientId: string) {
+  const staff = await requireStaff();
+  await reenroll(staff, clientId);
+  revalidatePath(`/staff/clients/${clientId}`);
 }
 
 export async function revokeDelegateAction(clientId: string, delegateId: string) {
