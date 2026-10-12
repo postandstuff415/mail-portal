@@ -72,8 +72,10 @@ export default async function QueuePage() {
       <h2 className="mb-2 text-lg font-semibold">Waiting for pickup ({readyForPickup.length})</h2>
       <ul className="mb-6 flex flex-col gap-2">
         {readyForPickup.map((m) => (
-          <li key={m.id} className="rounded-xl border border-[#7fe3d4]/50 p-3">
-            {who(m.client)} <span className="text-sm opacity-70">· shelf {m.shelfLocation ?? "?"}</span>
+          <li key={m.id}>
+            <Link href={`/mail/${m.id}`} className="block rounded-xl border border-[#7fe3d4]/50 p-3">
+              {who(m.client)} <span className="text-sm opacity-70">· shelf {m.shelfLocation ?? "?"}</span>
+            </Link>
           </li>
         ))}
       </ul>
@@ -82,11 +84,13 @@ export default async function QueuePage() {
       <p className="mb-2 text-sm opacity-80">Return to sender or shred, per the client agreement.</p>
       <ul className="flex flex-col gap-2">
         {pastHold.map((m) => (
-          <li key={m.id} className="rounded-xl border border-[#f48fb1]/60 p-3">
-            {who(m.client)}
-            <span className="block text-sm opacity-70">
-              Hold ended {m.retainUntil.toLocaleDateString("en-US")} · shelf {m.shelfLocation ?? "?"}
-            </span>
+          <li key={m.id}>
+            <Link href={`/mail/${m.id}`} className="block rounded-xl border border-[#f48fb1]/60 p-3">
+              {who(m.client)}
+              <span className="block text-sm opacity-70">
+                Hold ended {m.retainUntil.toLocaleDateString("en-US")} · shelf {m.shelfLocation ?? "?"}
+              </span>
+            </Link>
           </li>
         ))}
       </ul>

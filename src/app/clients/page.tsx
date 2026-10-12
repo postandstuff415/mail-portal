@@ -2,14 +2,16 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { db } from "@/lib/db";
-import { viewableClientIds } from "@/lib/permissions";
+import { isStaff, viewableClientIds } from "@/lib/permissions";
 import { requireViewer } from "@/lib/session";
+import { newMailCounts } from "@/lib/unread";
 
-// Case managers: the clients who approved them. Org admins: their org's
-// client list (names only, no mail). Phase 4 adds unread counts.
+// Case managers: the clients who approved them, with new and urgent mail.
+// Nonprofit admins: their organization's client list (names only, never mail).
 export default async function ClientsPage() {
   const viewer = await requireViewer();
   if (viewer.role === "CLIENT") redirect("/mail");
+  if (isStaff(viewer)) redirect("/staff");
 
   if (viewer.role === "ORG_ADMIN") {
     const clients = viewer.orgId
@@ -18,10 +20,12 @@ export default async function ClientsPage() {
     return (
       <AppShell name={viewer.name}>
         <h1 className="mb-4 text-2xl font-bold">Your organization&apos;s clients</h1>
+        <p className="mb-4 opacity-80">{clients.filter((c) => c.status === "ACTIVE").length} active</p>
         <ul className="flex flex-col gap-2 text-lg">
           {clients.map((c) => (
             <li key={c.id} className="rounded-xl border border-[#7fe3d4]/50 p-4">
               {c.firstName} {c.lastName} <span className="opacity-70">· {c.pmbNumber}</span>
+              {c.status !== "ACTIVE" && <span className="ml-2 text-sm opacity-70">({c.status.toLowerCase()})</span>}
             </li>
           ))}
         </ul>
@@ -30,40 +34,48 @@ export default async function ClientsPage() {
   }
 
   const ids = await viewableClientIds(viewer);
-  const clients = await db.client.findMany({
-    where: ids === "ALL" ? {} : { id: { in: ids } },
-    orderBy: { lastName: "asc" },
-    include: {
-      mailItems: { where: { status: { in: ["RECEIVED", "READY_FOR_PICKUP"] } }, select: { id: true, urgent: true } },
-    },
+  const clientIds = ids === "ALL" ? [] : ids;
+  const [clients, counts] = await Promise.all([
+    db.client.findMany({ where: { id: { in: clientIds } } }),
+    newMailCounts(viewer, clientIds),
+  ]);
+  // Clients with urgent new mail first, then any new mail, then by name.
+  const sorted = clients.sort((a, b) => {
+    const ca = counts.get(a.id) ?? { total: 0, urgent: 0 };
+    const cb = counts.get(b.id) ?? { total: 0, urgent: 0 };
+    return cb.urgent - ca.urgent || cb.total - ca.total || a.lastName.localeCompare(b.lastName);
   });
 
   return (
     <AppShell name={viewer.name}>
-      <h1 className="mb-4 text-2xl font-bold">Clients</h1>
-      {clients.length === 0 && <p className="text-lg">No clients have approved you yet.</p>}
+      <h1 className="mb-4 text-2xl font-bold">Your clients</h1>
+      {sorted.length === 0 && <p className="text-lg">No clients have approved you yet. Ask staff at the shop.</p>}
       <ul className="flex flex-col gap-3">
-        {clients.map((c) => (
-          <li key={c.id} className="rounded-xl border border-[#7fe3d4]/50 p-4">
-            <div className="flex items-center justify-between text-lg">
-              <span>
-                {c.firstName} {c.lastName} <span className="opacity-70">· {c.pmbNumber}</span>
-              </span>
-              {c.mailItems.some((m) => m.urgent) && (
-                <span className="rounded-full bg-[#f48fb1] px-3 py-1 text-sm font-bold text-[#1c1a1d]">Urgent</span>
-              )}
-            </div>
-            <ul className="mt-2 flex flex-col gap-1">
-              {c.mailItems.map((m) => (
-                <li key={m.id}>
-                  <Link href={`/mail/${m.id}`} className="text-[#ffd166] underline">
-                    View mail item
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </li>
-        ))}
+        {sorted.map((c) => {
+          const n = counts.get(c.id) ?? { total: 0, urgent: 0 };
+          return (
+            <li key={c.id}>
+              <Link
+                href={`/clients/${c.id}`}
+                className="flex items-center justify-between gap-3 rounded-xl border border-[#7fe3d4]/50 p-4 text-lg"
+              >
+                <span>
+                  {c.firstName} {c.lastName} <span className="text-base opacity-70">· {c.pmbNumber}</span>
+                </span>
+                <span className="flex shrink-0 gap-2">
+                  {n.urgent > 0 && (
+                    <span className="rounded-full bg-[#f48fb1] px-3 py-1 text-sm font-bold text-[#1c1a1d]">
+                      {n.urgent} urgent
+                    </span>
+                  )}
+                  {n.total > 0 && (
+                    <span className="rounded-full bg-[#ffd166] px-3 py-1 text-sm font-bold text-[#1c1a1d]">{n.total} new</span>
+                  )}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </AppShell>
   );

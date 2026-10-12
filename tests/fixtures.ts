@@ -90,6 +90,7 @@ export async function cleanup(f: Fixtures | undefined) {
   for (const img of images) await deleteMailImage(img.r2Key).catch(() => {});
   await db.mailImage.deleteMany({ where: { id: { in: images.map((i) => i.id) } } });
   await db.request.deleteMany({ where: { mailItem: { clientId: { in: clientIds } } } });
+  await db.pickup.deleteMany({ where: { mailItem: { clientId: { in: clientIds } } } });
   await db.mailItem.deleteMany({ where: { clientId: { in: clientIds } } });
   await db.delegate.deleteMany({ where: { clientId: { in: clientIds } } });
   await db.client.deleteMany({ where: { id: { in: clientIds } } });

@@ -159,6 +159,40 @@ export async function receiveMail(viewer: Viewer | null | undefined, input: Rece
   }
 }
 
+// After an "Open and scan" request: staff photograph each page of the contents.
+export async function addContentsPage(
+  viewer: Viewer | null | undefined,
+  mailItemId: string,
+  image: Uint8Array,
+  ip?: string | null,
+) {
+  assertStaff(viewer);
+  const item = await db.mailItem.findUnique({ where: { id: mailItemId } });
+  if (!item) throw new IntakeError("Mail not found.");
+  if (image.length === 0 || image.length > MAX_IMAGE_BYTES) throw new IntakeError("The photo is empty or too large.");
+  const kind = detectImageType(image);
+  if (!kind) throw new IntakeError("That file isn't a photo (JPEG, PNG, or WebP).");
+
+  const key = `mail/${item.clientId}/${randomUUID()}.${kind.ext}`;
+  await putMailImage(key, image, kind.contentType);
+  try {
+    const pages = await db.mailImage.count({ where: { mailItemId, kind: "CONTENTS" } });
+    await db.$transaction([
+      db.mailImage.create({ data: { mailItemId, kind: "CONTENTS", r2Key: key, pageNumber: pages + 1 } }),
+      db.mailItem.update({ where: { id: mailItemId }, data: { status: "OPENED" } }),
+      db.request.updateMany({
+        where: { mailItemId, type: "OPEN_AND_SCAN", status: "OPEN" },
+        data: { status: "DONE" },
+      }),
+    ]);
+    await writeAudit({ action: "UPLOAD", userId: viewer!.id, clientId: item.clientId, mailItemId, ip });
+    return { page: pages + 1 };
+  } catch (error) {
+    await deleteMailImage(key).catch(() => {});
+    throw error;
+  }
+}
+
 export async function lookupClientByPmb(viewer: Viewer | null | undefined, pmb: string) {
   assertStaff(viewer);
   return db.client.findUnique({

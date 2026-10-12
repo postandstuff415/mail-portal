@@ -1,10 +1,10 @@
 "use client";
 
-import imageCompression from "browser-image-compression";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { compressPhoto } from "@/lib/compress-photo";
 import { lookupClient, saveMail, type LookupResult } from "./actions";
 import { pmbFromScan, QrScanner } from "./qr-scanner";
 
@@ -50,15 +50,8 @@ export function ReceiveForm() {
     if (!file) return;
     setCompressing(true);
     try {
-      // Shrink a multi-megabyte phone photo to about 150 KB before upload.
-      const small = await imageCompression(file, {
-        maxSizeMB: 0.15,
-        maxWidthOrHeight: 1600,
-        fileType: "image/jpeg",
-        initialQuality: 0.8,
-        useWebWorker: true,
-      });
-      setPhoto(new File([small], "envelope.jpg", { type: "image/jpeg" }));
+      const small = await compressPhoto(file, "envelope.jpg");
+      setPhoto(small);
       setPreview(URL.createObjectURL(small));
     } finally {
       setCompressing(false);

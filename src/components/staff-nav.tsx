@@ -6,11 +6,12 @@ const LINKS = [
   { href: "/staff/clients/new", label: "New client" },
   { href: "/staff", label: "Clients" },
   { href: "/staff/orgs", label: "Nonprofits" },
+  { href: "/staff/people", label: "People" },
 ];
 
 export function StaffNav() {
   return (
-    <nav className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-5 print:hidden">
+    <nav className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3 print:hidden">
       {LINKS.map((l) => (
         <Link
           key={l.href}

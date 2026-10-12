@@ -1,8 +1,12 @@
 import Link from "next/link";
-import { signOut } from "@/auth";
+import { auth, signOut } from "@/auth";
 
-// Page frame for signed-in screens: flier colors, name, and a sign-out button.
-export function AppShell({ name, children }: { name: string; children: React.ReactNode }) {
+// Page frame for signed-in screens: flier colors, name, password link (email
+// accounts only), and a sign-out button.
+export async function AppShell({ name, children }: { name: string; children: React.ReactNode }) {
+  const session = await auth();
+  const emailAccount = !!session?.user?.role && session.user.role !== "CLIENT";
+
   async function logout() {
     "use server";
     await signOut({ redirectTo: "/login" });
@@ -16,6 +20,11 @@ export function AppShell({ name, children }: { name: string; children: React.Rea
         </Link>
         <div className="flex items-center gap-3 text-sm">
           <span className="hidden sm:inline">{name}</span>
+          {emailAccount && (
+            <Link href="/account/password" className="underline">
+              Password
+            </Link>
+          )}
           <form action={logout}>
             <button type="submit" className="rounded-md border border-[#ffd166] px-3 py-2 text-[#ffd166]">
               Log out

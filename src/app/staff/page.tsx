@@ -31,7 +31,9 @@ export default async function StaffHome() {
           return (
             <li key={c.id} className="flex items-center justify-between gap-3 rounded-xl border border-[#7fe3d4]/50 p-3">
               <span>
-                <span className="font-mono">{c.pmbNumber}</span> · {c.firstName} {c.lastName}
+                <Link href={`/staff/clients/${c.id}`} className="underline decoration-[#7fe3d4]/60">
+                  <span className="font-mono">{c.pmbNumber}</span> · {c.firstName} {c.lastName}
+                </Link>
                 <span className="block text-sm opacity-70">{c.org.name}</span>
                 {flags.length > 0 && <span className="block text-sm text-[#f48fb1]">{flags.join(" · ")}</span>}
               </span>
