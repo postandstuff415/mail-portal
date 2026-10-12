@@ -65,6 +65,15 @@ export function NewClientForm({ orgs }: { orgs: { id: string; name: string }[] }
       </select>
       <Label htmlFor="phone">Cell phone for text alerts (optional)</Label>
       <Input id="phone" name="phone" type="tel" inputMode="tel" className="h-12" />
+      <label className="flex items-start gap-3 py-2 text-base">
+        <input type="checkbox" name="smsConsent" className="mt-1 size-6 shrink-0" />
+        <span>
+          Client signed the text-alert agreement on the intake form{" "}
+          <a href="/sms-terms" target="_blank" className="text-[#ffd166] underline">
+            (wording)
+          </a>
+        </span>
+      </label>
       <Label htmlFor="idExpiresAt">ID expiration date</Label>
       <Input id="idExpiresAt" name="idExpiresAt" type="date" className="h-12" />
       <label className="flex items-center gap-3 py-2 text-base">

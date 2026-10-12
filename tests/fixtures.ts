@@ -33,6 +33,7 @@ export async function createFixtures() {
         pinHash,
         orgId,
         form1583OnFile: true,
+        smsConsentAt: new Date(),
         phone: `+1510555${tag.slice(0, 2).replace(/\D/g, "0")}0${suffix.charCodeAt(0) % 10}`,
       },
     });

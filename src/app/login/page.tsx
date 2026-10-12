@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { SiteFooter } from "@/components/public-page";
 import { homeFor } from "@/lib/session";
 import { LoginForms } from "./login-forms";
 
@@ -24,6 +25,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           .
         </p>
       </div>
+      <SiteFooter />
     </main>
   );
 }

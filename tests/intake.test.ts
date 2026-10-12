@@ -34,8 +34,10 @@ describe("new client intake", () => {
       orgId: f.org.id,
       phone: "(510) 555-0199",
       form1583OnFile: true,
+      smsConsent: true,
     });
     expect(pin).toMatch(/^\d{6}$/);
+    expect(client.smsConsentAt).toBeInstanceOf(Date);
     expect(client.pmbNumber).toBe(`VT${f.tag}NEW`);
     expect(client.phone).toBe("+15105550199");
     expect(await loginClient(client.pmbNumber, pin, null)).toMatchObject({ ok: true });
@@ -51,6 +53,28 @@ describe("new client intake", () => {
         form1583OnFile: true,
       }),
     ).rejects.toThrow(IntakeError);
+  });
+
+  it("text alerts need a phone number, and are off unless the client agreed", async () => {
+    await expect(
+      createClient(staff, {
+        pmbNumber: `VT${f.tag}NOPH`,
+        firstName: "No",
+        lastName: "Phone",
+        orgId: f.org.id,
+        form1583OnFile: true,
+        smsConsent: true,
+      }),
+    ).rejects.toThrow("phone number");
+    const { client } = await createClient(staff, {
+      pmbNumber: `VT${f.tag}NOSMS`,
+      firstName: "No",
+      lastName: "Texts",
+      orgId: f.org.id,
+      phone: "510-555-0177",
+      form1583OnFile: true,
+    });
+    expect(client.smsConsentAt).toBeNull();
   });
 
   it("only staff can add clients", async () => {

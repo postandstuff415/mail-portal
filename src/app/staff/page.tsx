@@ -26,6 +26,7 @@ export default async function StaffHome() {
             c.idExpiresAt && c.idExpiresAt < new Date() && "ID expired",
             c.idExpiresAt && c.idExpiresAt >= new Date() && c.idExpiresAt < soon && "ID expires within 30 days",
             c.status !== "ACTIVE" && c.status.toLowerCase(),
+            c.phone && !c.smsConsentAt && "Texts off (no signed agreement)",
           ].filter(Boolean);
           return (
             <li key={c.id} className="flex items-center justify-between gap-3 rounded-xl border border-[#7fe3d4]/50 p-3">

@@ -7,6 +7,8 @@ import { writeAudit } from "@/lib/audit";
 import { isStaff, type Viewer } from "@/lib/permissions";
 import { generatePin, normalizePmb } from "@/lib/pin";
 import { BCRYPT_ROUNDS } from "@/lib/security";
+import { sendSms } from "@/lib/sms";
+import { SMS_WELCOME_TEXT } from "@/lib/sms-consent";
 import { deleteMailImage, putMailImage } from "@/lib/storage";
 
 // Staff intake: new clients and incoming mail. Every function re-checks that
@@ -30,6 +32,8 @@ export const newClientSchema = z.object({
     .optional()
     .transform((v) => (v ? v : undefined)),
   form1583OnFile: z.boolean(),
+  // The client signed the text-alert agreement on the intake form.
+  smsConsent: z.boolean().default(false),
   idExpiresAt: z.date().optional(),
 });
 export type NewClientInput = z.input<typeof newClientSchema>;
@@ -53,6 +57,9 @@ export async function createClient(viewer: Viewer | null | undefined, input: New
   if (!(await db.organization.findUnique({ where: { id: data.orgId }, select: { id: true } }))) {
     throw new IntakeError("That nonprofit doesn't exist.");
   }
+  if (data.smsConsent && !data.phone) {
+    throw new IntakeError("Add a phone number to turn on text alerts.");
+  }
 
   const pin = generatePin();
   const client = await db.client.create({
@@ -63,10 +70,17 @@ export async function createClient(viewer: Viewer | null | undefined, input: New
       orgId: data.orgId,
       phone: data.phone ? normalizePhone(data.phone) : null,
       form1583OnFile: data.form1583OnFile,
+      smsConsentAt: data.smsConsent ? new Date() : null,
       idExpiresAt: data.idExpiresAt ?? null,
       pinHash: await bcrypt.hash(pin, BCRYPT_ROUNDS),
     },
   });
+  if (client.phone && client.smsConsentAt) {
+    // A failed welcome text must not undo the sign-up; staff can still see the client.
+    await sendSms(client.phone, SMS_WELCOME_TEXT).catch((error) =>
+      console.error("Welcome text failed:", error instanceof Error ? error.message : error),
+    );
+  }
   return { client, pin };
 }
 

@@ -22,6 +22,7 @@ export async function createClientAction(_prev: NewClientState, formData: FormDa
       orgId: String(formData.get("orgId") ?? ""),
       phone: String(formData.get("phone") ?? ""),
       form1583OnFile: formData.get("form1583OnFile") === "on",
+      smsConsent: formData.get("smsConsent") === "on",
       idExpiresAt: idExpires ? new Date(`${idExpires}T12:00:00`) : undefined,
     });
     const qrDataUrl = await QRCode.toDataURL(intakeQrUrl(client.pmbNumber), { margin: 1, width: 280 });

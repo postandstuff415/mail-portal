@@ -20,9 +20,12 @@ beforeAll(async () => {
       { clientId: f.clientA.id, retainUntil },
       { clientId: f.clientA.id, retainUntil, receivedAt: new Date(Date.now() - 3 * day) },
       { clientId: f.clientB.id, retainUntil },
+      { clientId: f.clientC.id, retainUntil },
     ],
   });
   await db.client.update({ where: { id: f.clientB.id }, data: { phone: null } });
+  // C has a phone and new mail but never agreed to texts.
+  await db.client.update({ where: { id: f.clientC.id }, data: { smsConsentAt: null } });
 });
 afterAll(async () => {
   await cleanup(f);
@@ -34,7 +37,7 @@ describe("daily text alerts", () => {
     const alerts = (await buildDailyAlerts(new Date())).filter((a) =>
       [f.clientA.id, f.clientB.id, f.clientC.id].includes(a.clientId),
     );
-    expect(alerts).toHaveLength(1); // B has no phone; C has no new mail
+    expect(alerts).toHaveLength(1); // B has no phone; C never agreed to texts
     expect(alerts[0]).toMatchObject({ clientId: f.clientA.id, phone: f.clientA.phone });
     expect(alerts[0].message).toContain("2 new pieces");
   });

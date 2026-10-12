@@ -7,6 +7,8 @@ export default defineConfig({
     include: ["tests/**/*.test.ts"],
     // Tests share one dev database; run files one at a time.
     fileParallelism: false,
+    // Tests must never send real texts, even if .env.local turns SMS on.
+    env: { SMS_LIVE: "false" },
     testTimeout: 30_000,
     hookTimeout: 60_000,
   },

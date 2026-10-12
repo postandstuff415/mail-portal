@@ -111,6 +111,8 @@ model Client {
   form1583OnFile Boolean      @default(false)
   idExpiresAt    DateTime?
   holdMonths     Int          @default(12)
+  // When the client agreed (signed intake form) to text alerts. Null = never text.
+  smsConsentAt   DateTime?
   // Login lockout: 5 wrong PINs locks the account for 15 minutes.
   failedLogins   Int          @default(0)
   lockedUntil    DateTime?

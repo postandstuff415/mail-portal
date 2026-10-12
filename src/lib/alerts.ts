@@ -22,7 +22,11 @@ export async function buildDailyAlerts(now: Date) {
   const since = new Date(now.getTime() - DAY_MS);
   const groups = await db.mailItem.groupBy({
     by: ["clientId"],
-    where: { receivedAt: { gt: since, lte: now }, client: { status: "ACTIVE", phone: { not: null } } },
+    // Only clients who agreed to texts (recorded at intake) and have a phone.
+    where: {
+      receivedAt: { gt: since, lte: now },
+      client: { status: "ACTIVE", phone: { not: null }, smsConsentAt: { not: null } },
+    },
     _count: { _all: true },
   });
   const clients = await db.client.findMany({
