@@ -14,7 +14,8 @@
                     "typecheck":  "tsc --noEmit",
                     "db:studio":  "dotenv -e .env.local -- prisma studio",
                     "test:e2e":  "dotenv -e .env.local -- tsx scripts/e2e-url-tamper.ts",
-                    "twilio:check":  "dotenv -e .env.local -- tsx scripts/twilio-check.ts"
+                    "twilio:check":  "dotenv -e .env.local -- tsx scripts/twilio-check.ts",
+                    "postinstall":  "prisma generate"
                 },
     "dependencies":  {
                          "@aws-sdk/client-s3":  "^3.1149.0",
