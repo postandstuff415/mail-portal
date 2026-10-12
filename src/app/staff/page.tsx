@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { StaffNav } from "@/components/staff-nav";
+import { StaffTodo } from "@/components/staff-todo";
 import { db } from "@/lib/db";
 import { requireStaff } from "@/lib/session";
 
@@ -18,6 +19,7 @@ export default async function StaffHome() {
   return (
     <AppShell name={viewer.name}>
       <StaffNav />
+      <StaffTodo />
       <h1 className="mb-4 text-2xl font-bold">Clients</h1>
       <ul className="flex flex-col gap-2">
         {clients.map((c) => {

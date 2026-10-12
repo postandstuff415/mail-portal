@@ -5,6 +5,7 @@ import { addMonths, isOverdue, monthKey, monthLabel } from "@/lib/billing";
 import { db } from "@/lib/db";
 import { requireStaff } from "@/lib/session";
 import { generateLastMonthAction, markInvoiceAction } from "./actions";
+import { EmailInvoiceButton } from "./email-button";
 
 const PT = { timeZone: "America/Los_Angeles" } as const;
 
@@ -47,7 +48,8 @@ export default async function InvoicesPage() {
                 {isOverdue(inv) ? "OVERDUE" : inv.status.toLowerCase()}
               </span>
             </p>
-            <div className="mt-2 flex gap-3 text-sm">
+            <div className="mt-2 flex flex-wrap gap-3 text-sm">
+              {inv.status !== "PAID" && <EmailInvoiceButton invoiceId={inv.id} />}
               {inv.status === "DRAFT" && (
                 <form action={markInvoiceAction.bind(null, inv.id, "SENT")}>
                   <button type="submit" className="text-[#ffd166] underline">

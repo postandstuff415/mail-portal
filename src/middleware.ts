@@ -7,7 +7,7 @@ import { authConfig } from "@/auth.config";
 // itself on the server.
 const { auth } = NextAuth(authConfig);
 
-const PROTECTED = ["/mail", "/clients", "/staff", "/account", "/invoices"];
+const PROTECTED = ["/mail", "/clients", "/staff", "/account", "/invoices", "/reports"];
 
 export default auth((req) => {
   const path = req.nextUrl.pathname;

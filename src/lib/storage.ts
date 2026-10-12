@@ -1,4 +1,10 @@
-import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // Mail scans live in the private Neon Object Storage bucket "mail".
@@ -37,6 +43,35 @@ export async function putMailImage(key: string, body: Uint8Array, contentType: s
 }
 
 export async function deleteMailImage(key: string) {
+  const { client, bucket } = s3();
+  await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+}
+
+// General private files (database backups live under "backups/").
+export async function putObject(key: string, body: Uint8Array, contentType: string) {
+  const { client, bucket } = s3();
+  await client.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType }));
+}
+
+export async function getObjectBytes(key: string): Promise<Uint8Array> {
+  const { client, bucket } = s3();
+  const res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+  return res.Body!.transformToByteArray();
+}
+
+export async function listKeys(prefix: string): Promise<string[]> {
+  const { client, bucket } = s3();
+  const keys: string[] = [];
+  let token: string | undefined;
+  do {
+    const res = await client.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix, ContinuationToken: token }));
+    for (const o of res.Contents ?? []) if (o.Key) keys.push(o.Key);
+    token = res.IsTruncated ? res.NextContinuationToken : undefined;
+  } while (token);
+  return keys;
+}
+
+export async function deleteObject(key: string) {
   const { client, bucket } = s3();
   await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
 }

@@ -38,6 +38,9 @@ export default async function ClientsPage() {
             </ul>
           </section>
         )}
+        <Link href="/reports" className="mb-6 block rounded-md border border-[#7fe3d4] p-3 text-center text-[#7fe3d4]">
+          Grant report (monthly totals)
+        </Link>
         <h1 className="mb-4 text-2xl font-bold">Your organization&apos;s clients</h1>
         <p className="mb-4 opacity-80">{clients.filter((c) => c.status === "ACTIVE").length} active</p>
         <ul className="flex flex-col gap-2 text-lg">
