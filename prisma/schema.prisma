@@ -77,6 +77,12 @@ enum AuditAction {
   PIN_RESET
 }
 
+enum ApplicationStatus {
+  PENDING
+  CONVERTED
+  REJECTED
+}
+
 enum InvoiceStatus {
   DRAFT
   SENT
@@ -94,9 +100,10 @@ model Organization {
   monthlyRate  Decimal      @default(15.00) @db.Decimal(10, 2)
   createdAt    DateTime     @default(now())
 
-  clients  Client[]
-  users    User[]
-  invoices Invoice[]
+  clients      Client[]
+  users        User[]
+  invoices     Invoice[]
+  applications Application[]
 }
 
 model Client {
@@ -128,6 +135,7 @@ model Client {
   delegates    Delegate[]
   auditLogs    AuditLog[]
   invoiceLines InvoiceLine[]
+  application  Application?
 
   @@index([orgId])
 }
@@ -277,4 +285,37 @@ model InvoiceLine {
   client  Client  @relation(fields: [clientId], references: [id])
 
   @@unique([invoiceId, clientId])
+}
+
+// Online sign-up (postandstuff.com/signup): the person reads and e-signs the
+// client agreement. Staff turn it into a Client on a 1583 / ID day.
+model Application {
+  id               String            @id @default(cuid())
+  firstName        String
+  lastName         String
+  phone            String?
+  email            String?
+  orgId            String?
+  caseManagerName  String?
+  caseManagerEmail String?
+  dateOfBirth      DateTime?
+  // Typed in when their nonprofit isn't in the list yet.
+  orgOther         String?
+  // Agreed online that the named case manager may see their mail.
+  delegateConsent  Boolean           @default(false)
+  // Exact agreement wording agreed to (see src/lib/agreement.ts) and the typed signature.
+  agreementVersion String
+  signatureName    String
+  signedAt         DateTime          @default(now())
+  smsConsent       Boolean           @default(false)
+  ip               String?
+  userAgent        String?
+  status           ApplicationStatus @default(PENDING)
+  clientId         String?           @unique
+  createdAt        DateTime          @default(now())
+
+  org    Organization? @relation(fields: [orgId], references: [id])
+  client Client?       @relation(fields: [clientId], references: [id])
+
+  @@index([status, createdAt])
 }

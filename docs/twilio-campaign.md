@@ -38,8 +38,10 @@ Before registering:
 
 **How do end-users consent to receive messages? (Message flow / Call to action)**
 
-> Clients open a mailbox in person at our shop, 4051 Foothill Blvd, Oakland, CA 94604. The paper sign-up form has a
-> separate, optional checkbox for text alerts that the client checks, signs and dates, with this wording: "I agree to
+> Clients sign up online at https://postandstuff.com/signup (usually with their case manager), where text alerts are a
+> separate, optional, unchecked checkbox next to the full program terms; the sign-up is signed by typing the client's
+> name and is stored with the date and time. Clients can also sign up on paper at our shop, 4051 Foothill Blvd,
+> Oakland, CA 94604, where the form has the same optional checkbox, signed and dated. The wording is: "I agree to
 > receive mail alert text messages from Post and Stuff at the mobile number I provided. Up to 1 message per day when
 > mail arrives. Message and data rates may apply. Reply STOP to cancel, HELP for help. Consent is not required to use
 > the mailbox service." Staff turn on alerts in our system only when the box is checked and signed, and the date of

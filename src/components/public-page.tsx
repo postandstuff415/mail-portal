@@ -24,12 +24,15 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-[#7fe3d4]/30 px-4 py-6 text-center text-sm text-[#e8f4f0]/80 print:hidden">
       <p>Post and Stuff · 4051 Foothill Blvd, Oakland, CA 94604 · (415) 725-1603</p>
-      <p className="mt-2 flex justify-center gap-4">
+      <p className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
         <Link href="/privacy" className="underline">
           Privacy policy
         </Link>
         <Link href="/sms-terms" className="underline">
           Text alert terms
+        </Link>
+        <Link href="/agreement" className="underline">
+          Mailbox agreement
         </Link>
       </p>
     </footer>

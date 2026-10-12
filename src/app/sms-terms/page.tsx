@@ -18,9 +18,10 @@ export default function SmsTermsPage() {
 
       <h2>How you sign up</h2>
       <p>
-        Texts are optional. When you open a mailbox with us, in person at our shop, the sign-up form has a separate
-        checkbox for text alerts with your signature. Staff turn on alerts only when that box is checked and signed.
-        The wording on the form is:
+        Texts are optional. When you open a mailbox with us, online at{" "}
+        <a href="/signup">postandstuff.com/signup</a> or on paper at our shop, the sign-up form has a separate,
+        unchecked checkbox for text alerts, and you sign the form. We turn on alerts only when that box is checked and
+        the form is signed. The wording is:
       </p>
       <blockquote className="rounded-lg border-l-4 border-[#ffd166] bg-white/5 p-4">
         <p>☐ {SMS_CONSENT_TEXT}</p>

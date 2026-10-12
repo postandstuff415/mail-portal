@@ -29,6 +29,12 @@ export default function Home() {
         >
           Log in to see your mail
         </Link>
+        <Link
+          href="/signup"
+          className="flex h-14 items-center justify-center rounded-md border-2 border-[#f48fb1] text-lg font-semibold text-[#f48fb1]"
+        >
+          New? Sign up with your case manager
+        </Link>
 
         <ul className="flex flex-col gap-3 text-[#e8f4f0]">
           <li>

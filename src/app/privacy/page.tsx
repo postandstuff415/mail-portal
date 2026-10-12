@@ -16,6 +16,10 @@ export default function PrivacyPage() {
       <h2>What we collect</h2>
       <ul>
         <li>Your name, mailbox number, and the nonprofit that referred you.</li>
+        <li>
+          From the online sign-up form: your date of birth, phone and email if you give them, your case manager&apos;s
+          name and email, and your typed signature with the date, time, and device you signed from.
+        </li>
         <li>Your mobile number, only if you give it to us for text alerts.</li>
         <li>
           Photos of the outside of your envelopes and packages. We open and scan what&apos;s inside only when you or
