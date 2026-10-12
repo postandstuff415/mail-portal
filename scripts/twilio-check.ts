@@ -38,7 +38,11 @@ async function main() {
     console.log(`  ${s.sid} "${s.friendlyName}" numbers: ${senders.map((p) => p.phoneNumber).join(", ") || "none"}`);
     const campaigns = await client.messaging.v1.services(s.sid).usAppToPerson.list({ limit: 20 });
     for (const c of campaigns) {
-      console.log(`     campaign ${c.sid} use case ${c.usAppToPersonUsecase}: ${c.campaignStatus}`);
+      console.log(
+        `     campaign ${c.campaignId ?? c.sid} use case ${c.usAppToPersonUsecase}: ${c.campaignStatus}` +
+          (c.errors?.length ? ` errors: ${JSON.stringify(c.errors)}` : "") +
+          ` (submitted ${c.dateCreated?.toISOString().slice(0, 16)})`,
+      );
     }
   }
 

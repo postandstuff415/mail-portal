@@ -60,6 +60,15 @@ describe("daily text alerts", () => {
     expect(sent).not.toContain(f.clientA.phone);
   });
 
+  it("a client who replied STOP gets their texts switched off in our records", async () => {
+    await db.client.update({ where: { id: f.clientA.id }, data: { smsConsentAt: new Date() } });
+    const result = await sendDailyAlerts(new Date(), async (to) => {
+      if (to === f.clientA.phone) throw Object.assign(new Error("Attempt to send to unsubscribed recipient"), { code: 21610 });
+    });
+    expect(result.optedOut).toBeGreaterThanOrEqual(1);
+    expect((await db.client.findUniqueOrThrow({ where: { id: f.clientA.id } })).smsConsentAt).toBeNull();
+  });
+
   it("knows when it's 5 pm in Oakland, in summer and winter time", () => {
     expect(pacificHour(new Date("2026-07-01T00:00:00Z"))).toBe(17); // PDT
     expect(pacificHour(new Date("2026-12-01T01:00:00Z"))).toBe(17); // PST

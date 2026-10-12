@@ -45,14 +45,25 @@ export async function sendDailyAlerts(now: Date, send: SmsSender = sendSms) {
   const alerts = await buildDailyAlerts(now);
   let sent = 0;
   let failed = 0;
+  let optedOut = 0;
   for (const alert of alerts) {
     try {
       await send(alert.phone, alert.message);
       sent++;
     } catch (error) {
       failed++;
+      if (isOptedOutError(error)) {
+        // They replied STOP: Twilio blocks texts to them, so record it here too.
+        await db.client.update({ where: { id: alert.clientId }, data: { smsConsentAt: null } });
+        optedOut++;
+      }
       console.error(`Text to client ${alert.clientId} failed:`, error instanceof Error ? error.message : error);
     }
   }
-  return { sent, failed };
+  return { sent, failed, optedOut };
+}
+
+// Twilio error 21610: the recipient replied STOP (carrier-enforced opt-out).
+export function isOptedOutError(error: unknown): boolean {
+  return typeof error === "object" && error !== null && (error as { code?: unknown }).code === 21610;
 }

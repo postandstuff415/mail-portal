@@ -7,6 +7,7 @@ import { writeAudit } from "@/lib/audit";
 import { isStaff, type Viewer } from "@/lib/permissions";
 import { generatePin, normalizePmb } from "@/lib/pin";
 import { BCRYPT_ROUNDS } from "@/lib/security";
+import { isOptedOutError } from "@/lib/alerts";
 import { sendSms } from "@/lib/sms";
 import { SMS_WELCOME_TEXT } from "@/lib/sms-consent";
 import { deleteMailImage, putMailImage } from "@/lib/storage";
@@ -77,9 +78,11 @@ export async function createClient(viewer: Viewer | null | undefined, input: New
   });
   if (client.phone && client.smsConsentAt) {
     // A failed welcome text must not undo the sign-up; staff can still see the client.
-    await sendSms(client.phone, SMS_WELCOME_TEXT).catch((error) =>
-      console.error("Welcome text failed:", error instanceof Error ? error.message : error),
-    );
+    await sendSms(client.phone, SMS_WELCOME_TEXT).catch(async (error) => {
+      console.error("Welcome text failed:", error instanceof Error ? error.message : error);
+      // This number replied STOP to us before: don't mark texts as on.
+      if (isOptedOutError(error)) await db.client.update({ where: { id: client.id }, data: { smsConsentAt: null } });
+    });
   }
   return { client, pin };
 }
