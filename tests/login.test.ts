@@ -37,6 +37,18 @@ describe("client PIN login", () => {
     expect(await db.auditLog.count({ where: { action: "LOGIN_FAILED", clientId: f.clientB.id } })).toBe(6);
   });
 
+  it("one connection can't keep guessing across many mailboxes", async () => {
+    const ip = `203.0.113.${Math.floor(Math.random() * 250)}`;
+    // 30 failures spread over many (made-up) mailbox numbers from one connection...
+    for (let i = 0; i < 30; i++) await loginClient(`NOPE-${i}`, "000000", ip);
+    // ...then even the right PIN from that connection is turned away for now.
+    await db.client.update({ where: { id: f.clientA.id }, data: { failedLogins: 0, lockedUntil: null } });
+    expect(await loginClient(f.clientA.pmbNumber, PIN_A, ip)).toEqual({ ok: false, reason: "locked" });
+    // Other connections are unaffected.
+    expect(await loginClient(f.clientA.pmbNumber, PIN_A, "198.51.100.7")).toMatchObject({ ok: true });
+    await db.auditLog.deleteMany({ where: { ip } });
+  });
+
   it("a lock expires after 15 minutes", async () => {
     await db.client.update({ where: { id: f.clientB.id }, data: { lockedUntil: new Date(Date.now() - 1000) } });
     expect(await loginClient(f.clientB.pmbNumber, PIN_A, null)).toMatchObject({ ok: true });

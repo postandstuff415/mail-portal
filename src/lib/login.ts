@@ -3,7 +3,7 @@ import type { UserRole } from "@prisma/client";
 import { db } from "@/lib/db";
 import { writeAudit } from "@/lib/audit";
 import { normalizePmb } from "@/lib/pin";
-import { LOCK_MINUTES, MAX_FAILED_LOGINS } from "@/lib/security";
+import { IP_WINDOW_MINUTES, LOCK_MINUTES, MAX_FAILED_LOGINS, MAX_FAILED_PER_IP } from "@/lib/security";
 
 // The identity stored in the session after a successful login.
 export type SessionIdentity = {
@@ -30,7 +30,21 @@ function lockExpiry() {
   return new Date(Date.now() + LOCK_MINUTES * 60 * 1000);
 }
 
+// Per-connection limit on top of the per-account lockout: stops one attacker
+// trying a few PINs on every mailbox. High enough that a shelter or nonprofit
+// office sharing one internet connection isn't blocked by normal typos.
+async function ipThrottled(ip: string | null): Promise<boolean> {
+  if (!ip) return false;
+  const since = new Date(Date.now() - IP_WINDOW_MINUTES * 60 * 1000);
+  const failures = await db.auditLog.count({ where: { action: "LOGIN_FAILED", ip, at: { gt: since } } });
+  return failures >= MAX_FAILED_PER_IP;
+}
+
 export async function loginClient(pmbInput: string, pin: string, ip: string | null): Promise<LoginResult> {
+  if (await ipThrottled(ip)) {
+    await writeAudit({ action: "LOGIN_FAILED", ip });
+    return { ok: false, reason: "locked" };
+  }
   const client = await db.client.findUnique({ where: { pmbNumber: normalizePmb(pmbInput) } });
 
   if (!client) {
@@ -75,6 +89,10 @@ export async function loginClient(pmbInput: string, pin: string, ip: string | nu
 // Staff, admins, case managers and nonprofit admins: email + password only
 // (owner decision 2026-10-11: no 2-step codes).
 export async function loginUser(emailInput: string, password: string, ip: string | null): Promise<LoginResult> {
+  if (await ipThrottled(ip)) {
+    await writeAudit({ action: "LOGIN_FAILED", ip });
+    return { ok: false, reason: "locked" };
+  }
   const user = await db.user.findUnique({ where: { email: emailInput.trim().toLowerCase() } });
 
   if (!user) {

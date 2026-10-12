@@ -4,6 +4,7 @@ import type { UserRole } from "@prisma/client";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { isStaff, type Viewer } from "@/lib/permissions";
+import { DISABLED_UNTIL } from "@/lib/security";
 
 // Email-login accounts: case managers, nonprofit admins, staff, admins.
 // New accounts and resets get a temporary password shown once to staff;
@@ -73,6 +74,27 @@ export async function resetUserPassword(viewer: Viewer | null | undefined, userI
     },
   });
   return { password };
+}
+
+// Someone leaves (a case manager changes jobs, staff quits): cut access now.
+// Removes every client approval and locks the account with an unknown password.
+// A password reset by staff gives the account back.
+export async function removeAccess(viewer: Viewer | null | undefined, userId: string) {
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user) throw new UserError("Account not found.");
+  if (user.id === viewer?.id) throw new UserError("You can't remove your own access.");
+  if (!canManage(viewer, user.role)) throw new UserError("Only an admin can remove staff or admin accounts.");
+  await db.$transaction([
+    db.delegate.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } }),
+    db.user.update({
+      where: { id: userId },
+      data: { lockedUntil: DISABLED_UNTIL, passwordHash: await bcrypt.hash(temporaryPassword(), ROUNDS), mustChangePassword: true },
+    }),
+  ]);
+}
+
+export function isDisabled(user: { lockedUntil: Date | null }) {
+  return !!user.lockedUntil && user.lockedUntil.getTime() >= DISABLED_UNTIL.getTime();
 }
 
 export async function changeOwnPassword(viewer: Viewer | null | undefined, current: string, next: string) {

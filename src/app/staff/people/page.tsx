@@ -2,6 +2,8 @@ import { AppShell } from "@/components/app-shell";
 import { StaffNav } from "@/components/staff-nav";
 import { db } from "@/lib/db";
 import { requireStaff } from "@/lib/session";
+import { isDisabled } from "@/lib/users";
+import { removeAccessAction } from "./actions";
 import { AddPersonForm, ResetPasswordButton } from "./people-forms";
 
 const ROLE_LABELS = {
@@ -38,9 +40,19 @@ export default async function PeoplePage() {
                 {u.org && ` · ${u.org.name}`}
                 {u.role === "CASE_MANAGER" && ` · ${u._count.delegates} client${u._count.delegates === 1 ? "" : "s"}`}
               </span>
+              {isDisabled(u) && <span className="block text-sm font-semibold text-[#f48fb1]">Access removed</span>}
             </span>
             {u.id !== viewer.id && (isAdmin || u.role === "CASE_MANAGER" || u.role === "ORG_ADMIN") && (
-              <ResetPasswordButton userId={u.id} />
+              <span className="flex shrink-0 flex-col items-end gap-2">
+                <ResetPasswordButton userId={u.id} label={isDisabled(u) ? "Give access back" : undefined} />
+                {!isDisabled(u) && (
+                  <form action={removeAccessAction.bind(null, u.id)}>
+                    <button type="submit" className="text-sm text-[#f48fb1] underline">
+                      Remove access
+                    </button>
+                  </form>
+                )}
+              </span>
             )}
           </li>
         ))}

@@ -7,7 +7,8 @@ import { loginUser } from "@/lib/login";
 import { canViewClient, getMailItemForViewer, type Viewer } from "@/lib/permissions";
 import { closeOut, createRequest, markPickedUp } from "@/lib/requests";
 import { newMailCounts, unseenIds } from "@/lib/unread";
-import { changeOwnPassword, createUser, resetUserPassword } from "@/lib/users";
+import { sessionStillValid } from "@/lib/session-check";
+import { changeOwnPassword, createUser, removeAccess, resetUserPassword } from "@/lib/users";
 import { cleanup, createFixtures, PASSWORD, type Fixtures } from "./fixtures";
 
 let f: Fixtures;
@@ -26,6 +27,7 @@ afterAll(async () => {
   // Users made by these tests go too (their login rows first).
   const made = { email: { endsWith: `-${f.tag.toLowerCase()}@vitest-new.example` } };
   await db.auditLog.deleteMany({ where: { user: made } });
+  await db.delegate.deleteMany({ where: { user: made } });
   await db.user.deleteMany({ where: made });
   await cleanup(f);
   await db.$disconnect();
@@ -162,6 +164,28 @@ describe("accounts and passwords", () => {
       identity: { mustChangePassword: true },
     });
     await expect(resetUserPassword(staff, f.admin.id)).rejects.toThrow("Only an admin");
+  });
+
+  it("removing someone's access cuts mail access and login at once; a reset gives it back", async () => {
+    const { user } = await createUser(staff, { name: "Leaving CM", email: email("leaving"), role: "CASE_MANAGER" });
+    await addDelegate(staff, f.clientA.id, user.id, true);
+    const leaving: Viewer = { id: user.id, role: "CASE_MANAGER" };
+    expect(await sessionStillValid(leaving)).toBe(true);
+    expect(await canViewClient(leaving, f.clientA.id)).toBe(true);
+
+    await removeAccess(staff, user.id);
+    expect(await canViewClient(leaving, f.clientA.id)).toBe(false);
+    expect(await sessionStillValid(leaving)).toBe(false); // an open session ends on the next page load
+    expect(await loginUser(user.email, PASSWORD, null)).toEqual({ ok: false, reason: "locked" });
+    await expect(removeAccess(staff, staff.id)).rejects.toThrow("your own");
+    await expect(removeAccess(staff, f.admin.id)).rejects.toThrow("Only an admin");
+
+    const { password } = await resetUserPassword(staff, user.id);
+    expect(await loginUser(user.email, password, null)).toMatchObject({ ok: true });
+  });
+
+  it("a role change ends the old session", async () => {
+    expect(await sessionStillValid({ id: f.caseManager.id, role: "STAFF" })).toBe(false);
   });
 
   it("people change their own password; the old one stops working", async () => {

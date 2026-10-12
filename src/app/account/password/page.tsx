@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { AppShell } from "@/components/app-shell";
+import { sessionStillValid } from "@/lib/session";
 import { PasswordForm } from "./password-form";
 
 export default async function PasswordPage() {
@@ -8,6 +9,7 @@ export default async function PasswordPage() {
   const session = await auth();
   const viewer = session?.user;
   if (!viewer?.id) redirect("/login");
+  if (!(await sessionStillValid(viewer))) redirect("/logout");
   // Clients log in with a PIN; staff reset it at the shop.
   if (viewer.role === "CLIENT") redirect("/mail");
 

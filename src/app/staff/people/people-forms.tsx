@@ -74,14 +74,14 @@ export function AddPersonForm({ orgs, canAddStaff }: { orgs: { id: string; name:
   );
 }
 
-export function ResetPasswordButton({ userId }: { userId: string }) {
+export function ResetPasswordButton({ userId, label = "Reset password" }: { userId: string; label?: string }) {
   const [state, action, pending] = useActionState<ResetState, FormData>(resetPasswordAction.bind(null, userId), {});
   if (state.password) return <TempPassword password={state.password} />;
   return (
     <form action={action}>
       {state.error && <p className="text-sm text-[#f48fb1]">{state.error}</p>}
       <button type="submit" disabled={pending} className="text-sm text-[#ffd166] underline">
-        {pending ? "Resetting…" : "Reset password"}
+        {pending ? "Resetting…" : label}
       </button>
     </form>
   );

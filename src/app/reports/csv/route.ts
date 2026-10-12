@@ -2,12 +2,15 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { isStaff } from "@/lib/permissions";
 import { canViewReports, orgReport, reportCsv } from "@/lib/reports";
+import { sessionStillValid } from "@/lib/session";
 
 // Grant report as a spreadsheet file. Staff, or that nonprofit's admins.
 export async function GET(request: Request) {
   const session = await auth();
   const viewer = session?.user;
-  if (!viewer?.id || viewer.mustChangePassword) return new Response("Not found", { status: 404 });
+  if (!viewer?.id || viewer.mustChangePassword || !(await sessionStillValid(viewer))) {
+    return new Response("Not found", { status: 404 });
+  }
 
   const requested = new URL(request.url).searchParams.get("org");
   const orgId = isStaff(viewer) ? requested : viewer.orgId;
