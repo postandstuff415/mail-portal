@@ -3,7 +3,7 @@
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 
-export type LoginState = { error?: string; needCode?: boolean };
+export type LoginState = { error?: string };
 
 const MESSAGES: Record<string, string> = {
   invalid: "That didn't match. Check your details and try again.",
@@ -12,7 +12,6 @@ const MESSAGES: Record<string, string> = {
 
 function messageFor(error: AuthError): LoginState {
   const code = (error as AuthError & { code?: string }).code ?? "invalid";
-  if (code === "code_required") return { needCode: true };
   return { error: MESSAGES[code] ?? MESSAGES.invalid };
 }
 
@@ -35,7 +34,6 @@ export async function staffLogin(_prev: LoginState, formData: FormData): Promise
     await signIn("staff-password", {
       email: formData.get("email"),
       password: formData.get("password"),
-      code: formData.get("code") ?? "",
       redirectTo: "/home",
     });
   } catch (error) {

@@ -7,7 +7,7 @@ import { authConfig } from "@/auth.config";
 // itself on the server.
 const { auth } = NextAuth(authConfig);
 
-const PROTECTED = ["/mail", "/clients", "/staff", "/account"];
+const PROTECTED = ["/mail", "/clients", "/staff"];
 
 export default auth((req) => {
   const path = req.nextUrl.pathname;
@@ -15,9 +15,6 @@ export default auth((req) => {
 
   if (!req.auth?.user) {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
-  }
-  if (req.auth.user.needs2faSetup && path !== "/account/2fa") {
-    return NextResponse.redirect(new URL("/account/2fa", req.nextUrl));
   }
 });
 

@@ -1,5 +1,4 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { generate } from "otplib";
 import { db } from "@/lib/db";
 import { loginClient, loginUser } from "@/lib/login";
 import { cleanup, createFixtures, PASSWORD, PIN_A, type Fixtures } from "./fixtures";
@@ -46,29 +45,25 @@ describe("client PIN login", () => {
 
 describe("staff and case manager login", () => {
   it("case managers log in with email and password", async () => {
-    const result = await loginUser(f.caseManager.email, PASSWORD, undefined, null);
-    expect(result).toMatchObject({ ok: true, identity: { role: "CASE_MANAGER", needs2faSetup: false } });
+    const result = await loginUser(f.caseManager.email, PASSWORD, null);
+    expect(result).toMatchObject({ ok: true, identity: { role: "CASE_MANAGER" } });
   });
 
-  it("staff must also give a 2-step code", async () => {
-    expect(await loginUser(f.staff.email, PASSWORD, undefined, null)).toEqual({ ok: false, reason: "code_required" });
-    expect(await loginUser(f.staff.email, PASSWORD, "000000", null)).toEqual({ ok: false, reason: "invalid" });
-    const code = await generate({ secret: f.staffSecret });
-    expect(await loginUser(f.staff.email, PASSWORD, code, null)).toMatchObject({ ok: true, identity: { role: "STAFF" } });
+  it("staff and admins log in with email and password only (no 2-step codes)", async () => {
+    expect(await loginUser(f.staff.email, PASSWORD, null)).toMatchObject({ ok: true, identity: { role: "STAFF" } });
+    expect(await loginUser(f.admin.email.toUpperCase(), PASSWORD, null)).toMatchObject({
+      ok: true,
+      identity: { role: "ADMIN" },
+    });
   });
 
-  it("a wrong password never reveals whether a code is needed", async () => {
-    expect(await loginUser(f.staff.email, "wrong", undefined, null)).toEqual({ ok: false, reason: "invalid" });
-  });
-
-  it("new staff without 2-step codes are flagged to set them up", async () => {
-    const result = await loginUser(f.staffNo2fa.email, PASSWORD, undefined, null);
-    expect(result).toMatchObject({ ok: true, identity: { needs2faSetup: true } });
+  it("a wrong password is rejected", async () => {
+    expect(await loginUser(f.staff.email, "wrong", null)).toEqual({ ok: false, reason: "invalid" });
   });
 
   it("locks after 5 wrong passwords", async () => {
-    for (let i = 0; i < 4; i++) await loginUser(f.orgAdmin.email, "wrong", undefined, null);
-    expect(await loginUser(f.orgAdmin.email, "wrong", undefined, null)).toEqual({ ok: false, reason: "locked" });
-    expect(await loginUser(f.orgAdmin.email, PASSWORD, undefined, null)).toEqual({ ok: false, reason: "locked" });
+    for (let i = 0; i < 4; i++) await loginUser(f.orgAdmin.email, "wrong", null);
+    expect(await loginUser(f.orgAdmin.email, "wrong", null)).toEqual({ ok: false, reason: "locked" });
+    expect(await loginUser(f.orgAdmin.email, PASSWORD, null)).toEqual({ ok: false, reason: "locked" });
   });
 });

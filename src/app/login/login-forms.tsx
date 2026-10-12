@@ -10,7 +10,7 @@ const field = "h-14 text-lg";
 
 export function LoginForms({ defaultPmb = "" }: { defaultPmb?: string }) {
   const [mode, setMode] = useState<"client" | "staff">("client");
-  // Controlled so the email and password survive when the 2-step code box appears.
+  // Controlled so a wrong-password retry keeps the email typed in.
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [clientState, clientAction, clientPending] = useActionState<LoginState, FormData>(clientLogin, {});
@@ -98,14 +98,6 @@ export function LoginForms({ defaultPmb = "" }: { defaultPmb?: string }) {
             className={field}
           />
         </div>
-        {staffState.needCode && (
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="code" className="text-base">
-              6-digit code from your authenticator app
-            </Label>
-            <Input id="code" name="code" inputMode="numeric" autoComplete="one-time-code" autoFocus required className={field} />
-          </div>
-        )}
         {staffState.error && (
           <p role="alert" className="text-base text-[#f48fb1]">
             {staffState.error}

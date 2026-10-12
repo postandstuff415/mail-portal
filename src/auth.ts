@@ -2,7 +2,6 @@ import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 import { authConfig } from "@/auth.config";
-import { db } from "@/lib/db";
 import { ipFromHeaders } from "@/lib/audit";
 import { loginClient, loginUser, type LoginResult } from "@/lib/login";
 
@@ -14,14 +13,10 @@ class InvalidLogin extends CredentialsSignin {
 class LockedLogin extends CredentialsSignin {
   code = "locked";
 }
-class CodeRequired extends CredentialsSignin {
-  code = "code_required";
-}
 
 function toUser(result: LoginResult) {
   if (result.ok) return { id: result.identity.id, name: result.identity.name, identity: result.identity };
   if (result.reason === "locked") throw new LockedLogin();
-  if (result.reason === "code_required") throw new CodeRequired();
   throw new InvalidLogin();
 }
 
@@ -33,10 +28,9 @@ const clientSchema = z.object({
 const userSchema = z.object({
   email: z.string().trim().email().max(200),
   password: z.string().min(1).max(200),
-  code: z.string().trim().max(10).optional(),
 });
 
-export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
+export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   providers: [
     Credentials({
@@ -53,32 +47,13 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
     Credentials({
       id: "staff-password",
       name: "Email and password",
-      credentials: { email: {}, password: {}, code: {} },
+      credentials: { email: {}, password: {} },
       async authorize(credentials, request) {
-        const parsed = userSchema.safeParse({
-          ...credentials,
-          code: credentials?.code ? String(credentials.code) : undefined,
-        });
+        const parsed = userSchema.safeParse(credentials);
         if (!parsed.success) throw new InvalidLogin();
         const ip = ipFromHeaders(request?.headers);
-        const { email, password, code } = parsed.data;
-        return toUser(await loginUser(email, password, code || undefined, ip));
+        return toUser(await loginUser(parsed.data.email, parsed.data.password, ip));
       },
     }),
   ],
-  callbacks: {
-    ...authConfig.callbacks,
-    async jwt(params) {
-      const token = await authConfig.callbacks.jwt(params);
-      // A session refresh (after finishing 2-step setup) re-reads the database
-      // instead of trusting anything the browser sent.
-      if (params.trigger === "update" && token.identity && token.identity.role !== "CLIENT") {
-        const user = await db.user.findUnique({ where: { id: token.identity.id } });
-        if (!user) return null;
-        const needsTotp = user.role === "STAFF" || user.role === "ADMIN";
-        token.identity = { ...token.identity, needs2faSetup: needsTotp && !user.twoFactorSecret };
-      }
-      return token;
-    },
-  },
 });

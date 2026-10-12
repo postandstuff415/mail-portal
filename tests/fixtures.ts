@@ -1,6 +1,5 @@
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
-import { generateSecret } from "otplib";
 import { db } from "@/lib/db";
 import { deleteMailImage } from "@/lib/storage";
 
@@ -45,9 +44,8 @@ export async function createFixtures() {
     db.user.create({
       data: { email: `${name}-${tag.toLowerCase()}@vitest.example`, name, passwordHash, role, ...extra },
     });
-  const staffSecret = generateSecret();
-  const staff = await mkUser("staff", "STAFF", { twoFactorSecret: staffSecret });
-  const staffNo2fa = await mkUser("staffnew", "STAFF");
+  const staff = await mkUser("staff", "STAFF");
+  const admin = await mkUser("admin", "ADMIN");
   const caseManager = await mkUser("casemanager", "CASE_MANAGER", { orgId: org.id });
   const orgAdmin = await mkUser("orgadmin", "ORG_ADMIN", { orgId: org.id });
 
@@ -69,8 +67,7 @@ export async function createFixtures() {
     clientB,
     clientC,
     staff,
-    staffSecret,
-    staffNo2fa,
+    admin,
     caseManager,
     orgAdmin,
     itemA,
@@ -87,7 +84,7 @@ export async function cleanup(f: Fixtures | undefined) {
   const clientIds = (
     await db.client.findMany({ where: { orgId: { in: [f.org.id, f.otherOrg.id] } }, select: { id: true } })
   ).map((c) => c.id);
-  const userIds = [f.staff.id, f.staffNo2fa.id, f.caseManager.id, f.orgAdmin.id];
+  const userIds = [f.staff.id, f.admin.id, f.caseManager.id, f.orgAdmin.id];
   await db.auditLog.deleteMany({ where: { OR: [{ clientId: { in: clientIds } }, { userId: { in: userIds } }] } });
   const images = await db.mailImage.findMany({ where: { mailItem: { clientId: { in: clientIds } } } });
   for (const img of images) await deleteMailImage(img.r2Key).catch(() => {});

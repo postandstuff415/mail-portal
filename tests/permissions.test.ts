@@ -44,11 +44,9 @@ describe("who can see whose mail", () => {
     expect(await getMailItemForViewer(admin, f.itemA.id)).toBeNull();
   });
 
-  it("staff see all mail, but only after 2-step setup", async () => {
-    const staff: Viewer = { id: f.staff.id, role: "STAFF" };
-    const newStaff: Viewer = { id: f.staffNo2fa.id, role: "STAFF", needs2faSetup: true };
-    expect(await canViewClient(staff, f.clientC.id)).toBe(true);
-    expect(await canViewClient(newStaff, f.clientC.id)).toBe(false);
+  it("staff and admins see all mail", async () => {
+    expect(await canViewClient({ id: f.staff.id, role: "STAFF" }, f.clientC.id)).toBe(true);
+    expect(await canViewClient({ id: f.admin.id, role: "ADMIN" }, f.clientC.id)).toBe(true);
   });
 
   it("nobody logged in sees nothing", async () => {

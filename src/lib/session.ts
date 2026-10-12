@@ -10,7 +10,6 @@ import { isStaff, type Viewer } from "@/lib/permissions";
 export async function requireViewer(): Promise<Viewer & { name: string }> {
   const session = await auth();
   if (!session?.user?.id || !session.user.role) redirect("/login");
-  if (session.user.needs2faSetup) redirect("/account/2fa");
   return session.user;
 }
 

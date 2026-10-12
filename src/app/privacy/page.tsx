@@ -32,7 +32,7 @@ export default function PrivacyPage() {
       <ul>
         <li>You, after logging in with your mailbox number and PIN.</li>
         <li>A case manager or caregiver you approved in writing. You can remove them at any time.</li>
-        <li>Post and Stuff staff, who use 2-step login.</li>
+        <li>Post and Stuff staff.</li>
         <li>
           Your referring nonprofit sees that you are enrolled (for billing and reports), but not your mail.
         </li>

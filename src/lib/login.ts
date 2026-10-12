@@ -3,7 +3,6 @@ import type { UserRole } from "@prisma/client";
 import { db } from "@/lib/db";
 import { writeAudit } from "@/lib/audit";
 import { normalizePmb } from "@/lib/pin";
-import { verifyTotp } from "@/lib/totp";
 import { LOCK_MINUTES, MAX_FAILED_LOGINS } from "@/lib/security";
 
 // The identity stored in the session after a successful login.
@@ -13,12 +12,9 @@ export type SessionIdentity = {
   name: string;
   clientId?: string;
   orgId?: string | null;
-  needs2faSetup?: boolean;
 };
 
-export type LoginResult =
-  | { ok: true; identity: SessionIdentity }
-  | { ok: false; reason: "invalid" | "locked" | "code_required" };
+export type LoginResult = { ok: true; identity: SessionIdentity } | { ok: false; reason: "invalid" | "locked" };
 
 // Compared against when the account doesn't exist, so a wrong mailbox number
 // takes as long as a wrong PIN and can't be used to discover real numbers.
@@ -74,12 +70,9 @@ export async function loginClient(pmbInput: string, pin: string, ip: string | nu
   };
 }
 
-export async function loginUser(
-  emailInput: string,
-  password: string,
-  code: string | undefined,
-  ip: string | null,
-): Promise<LoginResult> {
+// Staff, admins, case managers and nonprofit admins: email + password only
+// (owner decision 2026-10-11: no 2-step codes).
+export async function loginUser(emailInput: string, password: string, ip: string | null): Promise<LoginResult> {
   const user = await db.user.findUnique({ where: { email: emailInput.trim().toLowerCase() } });
 
   if (!user) {
@@ -105,12 +98,6 @@ export async function loginUser(
 
   if (!(await bcrypt.compare(password, user.passwordHash))) return fail();
 
-  const needsTotp = user.role === "STAFF" || user.role === "ADMIN";
-  if (needsTotp && user.twoFactorSecret) {
-    if (!code) return { ok: false, reason: "code_required" };
-    if (!(await verifyTotp(user.twoFactorSecret, code))) return fail();
-  }
-
   await db.user.update({ where: { id: user.id }, data: { failedLogins: 0, lockedUntil: null } });
   await writeAudit({ action: "LOGIN", userId: user.id, ip });
   return {
@@ -120,8 +107,6 @@ export async function loginUser(
       role: user.role,
       name: user.name ?? user.email,
       orgId: user.orgId,
-      // Staff without 2-step codes yet must set them up before doing anything else.
-      needs2faSetup: needsTotp && !user.twoFactorSecret,
     },
   };
 }

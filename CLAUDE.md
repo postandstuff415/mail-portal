@@ -26,7 +26,7 @@ Match the shop flier: dark background (#1c1a1d), neon teal (#7fe3d4), pink (#f48
 ## Roles
 - CLIENT: PMB number + 6-digit PIN
 - CASE_MANAGER, ORG_ADMIN, STAFF, ADMIN: email + password
-- STAFF/ADMIN also need TOTP 2-step
+- No 2-step codes for anyone (owner decision 2026-10-11: changes phones often). Staff/admin passwords are 12+ characters; lockout and 30-minute idle logout still apply. The unused `User.twoFactorSecret` column is left in place.
 
 ## Security rules (never break)
 - Every server action and route that touches mail calls `canViewClient(session, clientId)` on the server. Never trust IDs from the browser.

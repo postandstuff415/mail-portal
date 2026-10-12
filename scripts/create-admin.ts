@@ -5,7 +5,6 @@
 //   2. Run against a database:  npx dotenv -e <db env file> -- tsx scripts/create-admin.ts
 //   3. Delete .env.admin afterwards.
 //
-// The admin sets up 2-step codes on first login.
 import { readFileSync } from "node:fs";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
@@ -30,17 +29,16 @@ async function main() {
     const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 12);
     const existing = await db.user.findUnique({ where: { email } });
     if (existing) {
-      // Resetting clears 2-step codes too, so the owner can re-enroll a new phone.
       await db.user.update({
         where: { email },
-        data: { passwordHash, role: "ADMIN", twoFactorSecret: null, failedLogins: 0, lockedUntil: null },
+        data: { passwordHash, role: "ADMIN", failedLogins: 0, lockedUntil: null },
       });
       console.log(`Reset password for existing account ${email} on branch ${process.env.NEON_BRANCH ?? "?"}.`);
     } else {
       await db.user.create({ data: { email, name: ADMIN_NAME?.trim() || null, passwordHash, role: "ADMIN" } });
       console.log(`Created ADMIN account ${email} on branch ${process.env.NEON_BRANCH ?? "?"}.`);
     }
-    console.log("Next: log in at /login (staff login), then scan the 2-step QR code with your phone.");
+    console.log("Next: log in at /login using the staff login.");
   } finally {
     await db.$disconnect();
   }

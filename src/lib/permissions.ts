@@ -4,16 +4,16 @@ import type { SessionIdentity } from "@/lib/login";
 
 // The part of the session the permission checks rely on. IDs here come from
 // the signed session cookie, never from the URL or a form.
-export type Viewer = Pick<SessionIdentity, "id" | "role" | "clientId" | "orgId" | "needs2faSetup">;
+export type Viewer = Pick<SessionIdentity, "id" | "role" | "clientId" | "orgId">;
 
 export function isStaff(viewer: Viewer | null | undefined): boolean {
-  return !!viewer && (viewer.role === "STAFF" || viewer.role === "ADMIN") && !viewer.needs2faSetup;
+  return !!viewer && (viewer.role === "STAFF" || viewer.role === "ADMIN");
 }
 
 // May this person see this client's mail?
 // - The client themselves
 // - An approved, non-revoked delegate (case manager / caregiver)
-// - Staff and admins (after 2-step setup)
+// - Staff and admins
 // Org admins see client lists and invoices, never mail.
 export async function canViewClient(viewer: Viewer | null | undefined, clientId: string): Promise<boolean> {
   if (!viewer || !clientId) return false;
