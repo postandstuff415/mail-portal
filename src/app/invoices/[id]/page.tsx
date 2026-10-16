@@ -23,7 +23,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         <div className="flex justify-between gap-6">
           <div>
             <p className="text-2xl font-extrabold">POST &amp; STUFF</p>
-            <p className="text-sm">4051 Foothill Blvd, Oakland, CA 94604 · (415) 725-1603</p>
+            <p className="text-sm">4051 Foothill Blvd, Oakland, CA 94601 · (415) 725-1603</p>
           </div>
           <div className="text-right text-sm">
             <p className="text-xl font-bold">INVOICE</p>

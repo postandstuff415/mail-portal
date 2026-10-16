@@ -9,7 +9,7 @@ export default function PrivacyPage() {
       <p>Effective October 11, 2026.</p>
       <p>
         Post and Stuff (&quot;we&quot;) is a commercial mail receiving agency at 4051 Foothill Blvd, Oakland, CA
-        94604. We receive mail for clients, many of whom are referred and paid for by partner nonprofits. This policy
+        94601. We receive mail for clients, many of whom are referred and paid for by partner nonprofits. This policy
         explains what we collect through our mail portal at postandstuff.com and how we protect it.
       </p>
 

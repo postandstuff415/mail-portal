@@ -37,7 +37,7 @@ async function main() {
       "Clients sign up online at https://postandstuff.com/signup (usually with their case manager), where text alerts " +
       "are a separate, optional, unchecked checkbox next to the full program terms; the sign-up is signed by typing the " +
       "client's name and is stored with the date and time. Clients can also sign up on paper at our shop, 4051 Foothill " +
-      "Blvd, Oakland, CA 94604, where the form has the same optional checkbox, signed and dated. The wording is: \"" +
+      "Blvd, Oakland, CA 94601, where the form has the same optional checkbox, signed and dated. The wording is: \"" +
       SMS_CONSENT_TEXT +
       "\" The full program terms are published at https://postandstuff.com/sms-terms, and our privacy policy is at " +
       "https://postandstuff.com/privacy. After sign-up the client receives a confirmation text with frequency, rates, " +

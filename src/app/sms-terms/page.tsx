@@ -12,7 +12,7 @@ export default function SmsTermsPage() {
       <h2>What the program is</h2>
       <p>
         Post and Stuff Mail Alerts tells mailbox clients when new mail has arrived for them at Post and Stuff,
-        4051 Foothill Blvd, Oakland, CA 94604. Texts only say how many pieces arrived. They never include who the
+        4051 Foothill Blvd, Oakland, CA 94601. Texts only say how many pieces arrived. They never include who the
         mail is from or what it says. We never send marketing or promotional texts.
       </p>
 

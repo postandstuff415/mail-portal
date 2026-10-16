@@ -111,5 +111,15 @@ const V_2026_10_12: Agreement = {
   ],
 };
 
-export const AGREEMENTS: Record<string, Agreement> = { [V_2026_10_12.version]: V_2026_10_12 };
-export const CURRENT_AGREEMENT = V_2026_10_12;
+// Same words as 2026-10-12 with the ZIP corrected: USPS lists 4051 Foothill Blvd
+// under 94601 (94604 is a PO Box ZIP).
+const V_2026_10_16: Agreement = {
+  ...(JSON.parse(JSON.stringify(V_2026_10_12).replaceAll("CA 94604", "CA 94601")) as Agreement),
+  version: "2026-10-16",
+};
+
+export const AGREEMENTS: Record<string, Agreement> = {
+  [V_2026_10_12.version]: V_2026_10_12,
+  [V_2026_10_16.version]: V_2026_10_16,
+};
+export const CURRENT_AGREEMENT = V_2026_10_16;

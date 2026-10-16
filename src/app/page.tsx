@@ -55,7 +55,7 @@ export default function Home() {
         </ul>
 
         <div className="rounded-xl border border-[#7fe3d4]/60 p-4 text-sm leading-6 text-[#e8f4f0]">
-          <p>4051 Foothill Blvd, Oakland, CA 94604</p>
+          <p>4051 Foothill Blvd, Oakland, CA 94601</p>
           <p>
             <a href="tel:+14157251603" className="text-[#ffd166] underline">
               (415) 725-1603

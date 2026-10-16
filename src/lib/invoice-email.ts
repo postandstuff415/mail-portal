@@ -35,7 +35,7 @@ export function invoiceEmail(inv: InvoiceForEmail): Email {
     .join("");
   const html = `<div style="font-family:Arial,sans-serif;color:#111;max-width:640px">
 <p style="font-size:20px;font-weight:bold;margin:0">POST &amp; STUFF</p>
-<p style="margin:0 0 16px">4051 Foothill Blvd, Oakland, CA 94604 · (415) 725-1603</p>
+<p style="margin:0 0 16px">4051 Foothill Blvd, Oakland, CA 94601 · (415) 725-1603</p>
 <p>Invoice <strong>${number}</strong> for <strong>${escapeHtml(inv.org.name)}</strong><br>
 Client mailboxes, ${escapeHtml(period)} · ${terms}<br>
 <strong>Total ${money(inv.amount)} · due ${due}</strong>${isOverdue(inv) ? ' · <strong style="color:#b00">OVERDUE</strong>' : ""}</p>

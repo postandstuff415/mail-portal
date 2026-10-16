@@ -97,7 +97,7 @@ const html = `<!doctype html>
   </div>
   <div class="bottom">
     <div class="info">
-      <b>ADDRESS</b> 4051 Foothill Blvd<br>Oakland, CA 94604<br>
+      <b>ADDRESS</b> 4051 Foothill Blvd<br>Oakland, CA 94601<br>
       <b>PHONE</b> (415) 725-1603<br>
       <b>WEB</b> postandstuff.com<br>
       <b>THEN</b> bring 2 IDs (1 with photo)<br>

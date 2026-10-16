@@ -14,7 +14,7 @@ export function IntakeCard({
   return (
     <div className="mx-auto w-full max-w-sm rounded-2xl bg-white p-5 text-black print:max-w-none print:rounded-none">
       <p className="text-center text-xl font-extrabold">POST &amp; STUFF</p>
-      <p className="text-center text-sm">4051 Foothill Blvd, Oakland, CA 94604 · (415) 725-1603</p>
+      <p className="text-center text-sm">4051 Foothill Blvd, Oakland, CA 94601 · (415) 725-1603</p>
       <div className="mt-4 flex items-center gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={qrDataUrl} alt={`QR code for mailbox ${pmbNumber}`} width={140} height={140} />
