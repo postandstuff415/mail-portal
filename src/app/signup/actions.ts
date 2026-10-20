@@ -2,9 +2,11 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { ZodError } from "zod";
 import { ipFromHeaders } from "@/lib/audit";
 import { createApplication, SignupError } from "@/lib/signup";
+import { notifyNewSignup } from "@/lib/signup-email";
 
 export type SignupState = { error?: string; values?: Record<string, string> };
 
@@ -32,7 +34,7 @@ export async function signupAction(_prev: SignupState, formData: FormData): Prom
   };
   const h = await headers();
   try {
-    await createApplication(
+    const app = await createApplication(
       {
         ...values,
         delegateConsent: get("delegateConsent") === "on",
@@ -40,6 +42,12 @@ export async function signupAction(_prev: SignupState, formData: FormData): Prom
         agreed: (get("agreed") === "on") as true,
       },
       { ip: ipFromHeaders(h), userAgent: h.get("user-agent") },
+    );
+    // Email the owner after the page responds; a failed email never blocks a sign-up.
+    after(() =>
+      notifyNewSignup(app.id).catch((e) =>
+        console.error("Sign-up alert email failed:", e instanceof Error ? e.message : e),
+      ),
     );
   } catch (error) {
     // Send back what they typed so they don't have to start over.
