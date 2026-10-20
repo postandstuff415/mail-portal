@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { escapeHtml, sendEmail, type Email, type EmailSender } from "@/lib/email";
+import { isStaff, type Viewer } from "@/lib/permissions";
 
 // Heads-up to the shop owner each time someone signs up online.
 // Only name, nonprofit, and time: date of birth, phone, and email stay in the
@@ -38,4 +39,16 @@ export async function notifyNewSignup(applicationId: string, send: EmailSender =
   });
   if (!app) return false;
   return send(signupAlertEmail({ ...app, orgName: app.org?.name ?? app.orgOther }));
+}
+
+// Staff-only check that email really sends: a sample sign-up alert, nothing saved.
+export async function sendTestSignupAlert(viewer: Viewer, send: EmailSender = sendEmail) {
+  if (!isStaff(viewer)) throw new Error("Staff only.");
+  const email = signupAlertEmail({ firstName: "Test", lastName: "Person", orgName: "Sample Nonprofit", createdAt: new Date() });
+  return send({
+    ...email,
+    subject: `[Test] ${email.subject}`,
+    html: `<p><em>This is a test from the staff Sign-ups page. Nobody signed up.</em></p>${email.html}`,
+    text: `This is a test from the staff Sign-ups page. Nobody signed up.\n\n${email.text}`,
+  });
 }

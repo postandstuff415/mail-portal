@@ -5,7 +5,7 @@ import { loginClient } from "@/lib/login";
 import { canViewClient, type Viewer } from "@/lib/permissions";
 import type { Email } from "@/lib/email";
 import { convertApplication, createApplication, rejectApplication } from "@/lib/signup";
-import { notifyNewSignup } from "@/lib/signup-email";
+import { notifyNewSignup, sendTestSignupAlert } from "@/lib/signup-email";
 import { cleanup, createFixtures, type Fixtures } from "./fixtures";
 
 let f: Fixtures;
@@ -114,6 +114,19 @@ describe("online sign-up", () => {
       expect(body).not.toContain("1980");
       expect(body).not.toContain("0123");
     }
+  });
+
+  it("staff can send a test sign-up email; nothing is saved", async () => {
+    const sent: Email[] = [];
+    const before = await db.application.count();
+    expect(await sendTestSignupAlert(staff, async (e) => (sent.push(e), true))).toBe(true);
+    expect(sent).toHaveLength(1);
+    expect(sent[0].to).toBe("postandstuff415@gmail.com");
+    expect(sent[0].subject).toBe("[Test] New sign-up: Test Person");
+    expect(sent[0].text).toContain("Nobody signed up");
+    expect(await db.application.count()).toBe(before);
+    const cm: Viewer = { id: f.caseManager.id, role: "CASE_MANAGER" };
+    await expect(sendTestSignupAlert(cm, async () => true)).rejects.toThrow("Staff only");
   });
 
   it("only staff convert or remove sign-ups", async () => {

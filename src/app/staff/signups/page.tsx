@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { requireStaff } from "@/lib/session";
 import { rejectAction } from "./actions";
 import { ConvertForm } from "./convert-form";
+import { TestEmailButton } from "./test-email-button";
 
 const PT = { timeZone: "America/Los_Angeles" } as const;
 
@@ -139,6 +140,7 @@ export default async function SignupsPage({ searchParams }: { searchParams: Prom
           </ul>
         </>
       )}
+      <TestEmailButton />
     </AppShell>
   );
 }

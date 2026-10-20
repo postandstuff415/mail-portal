@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { intakeQrUrl } from "@/lib/intake";
 import { requireStaff } from "@/lib/session";
 import { convertApplication, rejectApplication, SignupError } from "@/lib/signup";
+import { SIGNUP_ALERT_TO, sendTestSignupAlert } from "@/lib/signup-email";
 
 export type ConvertState = {
   error?: string;
@@ -36,4 +37,18 @@ export async function rejectAction(applicationId: string) {
   const staff = await requireStaff();
   await rejectApplication(staff, applicationId);
   revalidatePath("/staff/signups");
+}
+
+export type TestEmailState = { ok?: string; error?: string };
+
+export async function testEmailAction(_prev: TestEmailState): Promise<TestEmailState> {
+  void _prev;
+  const staff = await requireStaff();
+  try {
+    return (await sendTestSignupAlert(staff))
+      ? { ok: `Sent to ${SIGNUP_ALERT_TO}. Check that inbox (and spam).` }
+      : { ok: "Email isn't switched on yet; nothing was sent." };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Email failed." };
+  }
 }
