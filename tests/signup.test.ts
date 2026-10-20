@@ -3,7 +3,9 @@ import { CURRENT_AGREEMENT } from "@/lib/agreement";
 import { db } from "@/lib/db";
 import { loginClient } from "@/lib/login";
 import { canViewClient, type Viewer } from "@/lib/permissions";
+import type { Email } from "@/lib/email";
 import { convertApplication, createApplication, rejectApplication } from "@/lib/signup";
+import { notifyNewSignup } from "@/lib/signup-email";
 import { cleanup, createFixtures, type Fixtures } from "./fixtures";
 
 let f: Fixtures;
@@ -97,6 +99,21 @@ describe("online sign-up", () => {
     await expect(
       convertApplication(staff, app.id, { pmbNumber: `VT${f.tag}SU2`, orgId: f.org.id, form1583OnFile: true }),
     ).rejects.toThrow("already handled");
+  });
+
+  it("emails the owner about each new sign-up, without date of birth or phone", async () => {
+    const app = await createApplication(good(), { ip: `${ipBase}.5`, userAgent: null });
+    const sent: Email[] = [];
+    await notifyNewSignup(app.id, async (e) => (sent.push(e), true));
+    expect(sent).toHaveLength(1);
+    expect(sent[0].to).toBe("postandstuff415@gmail.com");
+    expect(sent[0].subject).toBe("New sign-up: Robin Signup");
+    expect(sent[0].text).toContain(f.org.name);
+    expect(sent[0].text).toContain("/staff/signups");
+    for (const body of [sent[0].text, sent[0].html]) {
+      expect(body).not.toContain("1980");
+      expect(body).not.toContain("0123");
+    }
   });
 
   it("only staff convert or remove sign-ups", async () => {
