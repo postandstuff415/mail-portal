@@ -1,4 +1,5 @@
-// Builds the print flier: docs/flier/flier.html (4x6 in + 1/16 in bleed).
+// Builds the print fliers, each with 1/16 in bleed: docs/flier/flier.html (4x6 in)
+// and docs/flier/flier-5x7.html (5x7 in, the same design scaled up).
 // Then render with Chrome (see docs/flier/README.md). Run: node scripts/make-flier.mjs
 import { mkdirSync, writeFileSync } from "node:fs";
 import QRCode from "qrcode";
@@ -40,19 +41,26 @@ const rocket = `<svg viewBox="0 0 260 120" width="1.3in" height="0.6in" fill="no
 const feature = (ic, title, line) => `
   <div class="feat">${ic}<div><div class="ft">${title}</div><div class="fl">${line}</div></div></div>`;
 
-const html = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Post and Stuff flier</title>
+// The layout is drawn for 4x6; bigger cards zoom it to fill their height, and the
+// boxes stretch into any extra width.
+const SIZES = [
+  { file: "flier.html", w: 4, h: 6, zoom: 1 },
+  { file: "flier-5x7.html", w: 5, h: 7, zoom: 7 / 6 },
+];
+
+const page = ({ w, h, zoom }) => `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Post and Stuff flier ${w}x${h}</title>
 <style>
-  @page { size: 4.125in 6.125in; margin: 0; }
+  @page { size: ${w + 0.125}in ${h + 0.125}in; margin: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { background: #141215; }
-  html, body { width: 4.125in; height: 6.125in; }
+  html, body { width: ${w + 0.125}in; height: ${h + 0.125}in; }
   body { position: relative; overflow: hidden; }
   body { background: radial-gradient(ellipse at 50% 30%, #2a2530 0%, #1c1a1d 60%, #141215 100%);
          color: ${ink}; font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
          -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   /* Everything important stays 0.19 in inside the trim line. */
-  .safe { position: absolute; inset: 0.25in 0.25in 0.25in 0.25in; display: flex; flex-direction: column; align-items: center; }
+  .safe { position: absolute; inset: 0.25in 0.25in 0.25in 0.25in; display: flex; flex-direction: column; align-items: center; zoom: ${zoom}; }
   .safe > * { flex-shrink: 0; }
   .logo { text-align: center; line-height: 0.9; margin-top: -0.02in; }
   .post { font-size: 0.52in; font-weight: 900; letter-spacing: 0.02in; color: transparent;
@@ -113,5 +121,7 @@ const html = `<!doctype html>
 </div></body></html>`;
 
 mkdirSync("docs/flier", { recursive: true });
-writeFileSync("docs/flier/flier.html", html);
-console.log("wrote docs/flier/flier.html");
+for (const size of SIZES) {
+  writeFileSync(`docs/flier/${size.file}`, page(size));
+  console.log(`wrote docs/flier/${size.file}`);
+}
