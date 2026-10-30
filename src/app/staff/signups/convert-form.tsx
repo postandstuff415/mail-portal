@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { BillingFields } from "@/components/billing-fields";
 import { IntakeCard } from "@/components/intake-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,10 +12,12 @@ export function ConvertForm({
   applicationId,
   orgs,
   defaultOrgId,
+  selfPay,
 }: {
   applicationId: string;
   orgs: { id: string; name: string }[];
   defaultOrgId: string;
+  selfPay: boolean;
 }) {
   const [state, action, pending] = useActionState<ConvertState, FormData>(convertAction.bind(null, applicationId), {});
 
@@ -40,23 +43,7 @@ export function ConvertForm({
     <form action={action} className="flex flex-col gap-3 print:hidden">
       <Label htmlFor={`pmb-${applicationId}`}>Mailbox number (PMB)</Label>
       <Input id={`pmb-${applicationId}`} name="pmbNumber" required className="h-12 uppercase" />
-      <Label htmlFor={`org-${applicationId}`}>Nonprofit</Label>
-      <select
-        id={`org-${applicationId}`}
-        name="orgId"
-        required
-        defaultValue={defaultOrgId}
-        className="h-12 rounded-md border bg-transparent px-3"
-      >
-        <option value="" className="text-black">
-          Pick one
-        </option>
-        {orgs.map((o) => (
-          <option key={o.id} value={o.id} className="text-black">
-            {o.name}
-          </option>
-        ))}
-      </select>
+      <BillingFields idPrefix={applicationId} orgs={orgs} defaultOrgId={defaultOrgId} selfPay={selfPay} />
       <Label htmlFor={`id-${applicationId}`}>ID expiration date</Label>
       <Input id={`id-${applicationId}`} name="idExpiresAt" type="date" className="h-12" />
       <label className="flex items-start gap-3">

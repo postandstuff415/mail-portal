@@ -118,8 +118,28 @@ const V_2026_10_16: Agreement = {
   version: "2026-10-16",
 };
 
+// Adds self-pay mailboxes (no sponsoring nonprofit): who pays, the 3-month
+// minimum, and monthly bills. Changes only sections 3 and 7.
+const V_2026_10_30: Agreement = (() => {
+  const v = JSON.parse(JSON.stringify(V_2026_10_16)) as Agreement;
+  v.version = "2026-10-30";
+  const s3 = v.sections.find((x) => x.heading.startsWith("3."))!;
+  s3.closing = [
+    "If a partner nonprofit sponsors your mailbox, you never pay for it. Your nonprofit pays Post and Stuff for it. If you stop working with that nonprofit, tell us; we will help you find another sponsor, switch you to paying yourself, or close the mailbox.",
+    "If no nonprofit sponsors you (self-pay), you pay the monthly price we agree on when your mailbox is activated. The first 3 months (counting the month you start) are the minimum; after that your mailbox is month to month. We send your bill at the start of each month by email, or by text if you agreed to bill texts. Pay at the shop, or online if we give you a link.",
+  ];
+  const s7 = v.sections.find((x) => x.heading.startsWith("7."))!;
+  s7.bullets = [
+    ...(s7.bullets ?? []).slice(0, 2),
+    "Self-pay: if your bill is not paid, we may close your mailbox with 30 days' notice. Closing does not cancel what you owe for the 3-month minimum.",
+    ...(s7.bullets ?? []).slice(2),
+  ];
+  return v;
+})();
+
 export const AGREEMENTS: Record<string, Agreement> = {
   [V_2026_10_12.version]: V_2026_10_12,
   [V_2026_10_16.version]: V_2026_10_16,
+  [V_2026_10_30.version]: V_2026_10_30,
 };
-export const CURRENT_AGREEMENT = V_2026_10_16;
+export const CURRENT_AGREEMENT = V_2026_10_30;

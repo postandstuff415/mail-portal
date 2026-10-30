@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import { BillingFields } from "@/components/billing-fields";
 import { IntakeCard } from "@/components/intake-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,17 +31,6 @@ export function NewClientForm({ orgs }: { orgs: { id: string; name: string }[] }
     );
   }
 
-  if (orgs.length === 0) {
-    return (
-      <p>
-        Add a nonprofit first:{" "}
-        <Link href="/staff/orgs" className="text-[#ffd166] underline">
-          Nonprofits
-        </Link>
-      </p>
-    );
-  }
-
   return (
     <form action={action} className="flex flex-col gap-3">
       <Label htmlFor="pmbNumber">Mailbox number (PMB)</Label>
@@ -55,14 +45,9 @@ export function NewClientForm({ orgs }: { orgs: { id: string; name: string }[] }
           <Input id="lastName" name="lastName" required className="h-12" />
         </div>
       </div>
-      <Label htmlFor="orgId">Nonprofit</Label>
-      <select id="orgId" name="orgId" required className="h-12 rounded-md border bg-transparent px-3">
-        {orgs.map((o) => (
-          <option key={o.id} value={o.id} className="text-black">
-            {o.name}
-          </option>
-        ))}
-      </select>
+      <BillingFields idPrefix="new" orgs={orgs} />
+      <Label htmlFor="email">Email for bills (optional)</Label>
+      <Input id="email" name="email" type="email" className="h-12" />
       <Label htmlFor="phone">Cell phone for text alerts (optional)</Label>
       <Input id="phone" name="phone" type="tel" inputMode="tel" className="h-12" />
       <label className="flex items-start gap-3 py-2 text-base">
@@ -73,6 +58,10 @@ export function NewClientForm({ orgs }: { orgs: { id: string; name: string }[] }
             (wording)
           </a>
         </span>
+      </label>
+      <label className="flex items-start gap-3 py-2 text-base">
+        <input type="checkbox" name="billSmsConsent" className="mt-1 size-6 shrink-0" />
+        <span>Self-pay only: client agreed in writing to get their monthly bill by text</span>
       </label>
       <Label htmlFor="idExpiresAt">ID expiration date</Label>
       <Input id="idExpiresAt" name="idExpiresAt" type="date" className="h-12" />

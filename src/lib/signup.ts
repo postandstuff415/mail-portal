@@ -34,15 +34,34 @@ export const signupSchema = z
     email: z.union([z.literal(""), z.string().trim().email("Check the email address.").max(200)]).optional(),
     orgId: optionalText(40),
     orgOther: optionalText(120),
-    caseManagerName: z.string().trim().min(1, "Enter your case manager's name.").max(120),
-    caseManagerEmail: z.string().trim().toLowerCase().email("Check your case manager's email.").max(200),
+    // Optional: walk-ins and self-pay clients may not have a case manager.
+    caseManagerName: optionalText(120),
+    caseManagerEmail: z
+      .union([z.literal(""), z.string().trim().toLowerCase().email("Check your case manager's email.").max(200)])
+      .optional()
+      .transform((v) => v || undefined),
     delegateConsent: z.boolean(),
     smsConsent: z.boolean(),
+    // No sponsoring nonprofit: the client pays the monthly price themselves.
+    selfPay: z.boolean().default(false),
+    billSmsConsent: z.boolean().default(false),
     agreed: z.literal(true, { message: "Check the box to agree to the mailbox agreement." }),
     signatureName: z.string().trim().min(1, "Type your full name to sign."),
   })
-  .refine((d) => d.orgId || d.orgOther, { message: "Pick your nonprofit, or type its name.", path: ["orgId"] })
+  .refine((d) => d.selfPay || d.orgId || d.orgOther, {
+    message: "Pick your nonprofit, type its name, or choose \"No sponsor, I'll pay myself\".",
+    path: ["orgId"],
+  })
   .refine((d) => !d.smsConsent || !!d.phone, { message: "Add a phone number to get text alerts.", path: ["phone"] })
+  .refine((d) => !d.billSmsConsent || !!d.phone, { message: "Add a phone number to get your bill by text.", path: ["phone"] })
+  .refine((d) => !d.selfPay || !!d.email || d.billSmsConsent, {
+    message: "Self-pay: add an email, or a phone number and agree to bill texts, so we can send your monthly bill.",
+    path: ["email"],
+  })
+  .refine((d) => !d.delegateConsent || !!d.caseManagerEmail, {
+    message: "Add your case manager's email to let them see your mail.",
+    path: ["caseManagerEmail"],
+  })
   .refine(
     (d) => squash(d.signatureName) === squash(`${d.firstName} ${d.lastName}`),
     { message: "Your typed signature must match your first and last name.", path: ["signatureName"] },
@@ -70,7 +89,7 @@ export async function createApplication(
     throw new SignupError("Phone must be a 10-digit US number.");
   }
   const orgId =
-    data.orgId && (await db.organization.findUnique({ where: { id: data.orgId }, select: { id: true } }))
+    !data.selfPay && data.orgId && (await db.organization.findUnique({ where: { id: data.orgId }, select: { id: true } }))
       ? data.orgId
       : null;
 
@@ -82,11 +101,13 @@ export async function createApplication(
       phone: phone ?? null,
       email: data.email || null,
       orgId,
-      orgOther: orgId ? null : (data.orgOther ?? null),
-      caseManagerName: data.caseManagerName,
-      caseManagerEmail: data.caseManagerEmail,
-      delegateConsent: data.delegateConsent,
+      orgOther: orgId || data.selfPay ? null : (data.orgOther ?? null),
+      caseManagerName: data.caseManagerName ?? null,
+      caseManagerEmail: data.caseManagerEmail ?? null,
+      delegateConsent: data.delegateConsent && !!data.caseManagerEmail,
       smsConsent: data.smsConsent,
+      selfPay: data.selfPay,
+      billSmsConsent: data.selfPay && data.billSmsConsent,
       agreementVersion: CURRENT_AGREEMENT.version,
       signatureName: data.signatureName,
       ip: meta.ip,
@@ -99,7 +120,15 @@ export async function createApplication(
 export async function convertApplication(
   viewer: Viewer | null | undefined,
   applicationId: string,
-  input: { pmbNumber: string; orgId: string; idExpiresAt?: Date; form1583OnFile: boolean },
+  input: {
+    pmbNumber: string;
+    // Defaults to nonprofit-paid.
+    billingType?: "NONPROFIT" | "SELF_PAY";
+    orgId?: string;
+    monthlyPrice?: string;
+    idExpiresAt?: Date;
+    form1583OnFile: boolean;
+  },
 ) {
   if (!isStaff(viewer)) throw new SignupError("Staff only.");
   const app = await db.application.findUnique({ where: { id: applicationId } });
@@ -112,7 +141,11 @@ export async function convertApplication(
       pmbNumber: input.pmbNumber,
       firstName: app.firstName,
       lastName: app.lastName,
+      billingType: input.billingType ?? "NONPROFIT",
       orgId: input.orgId,
+      monthlyPrice: input.monthlyPrice,
+      email: app.email ?? undefined,
+      billSmsConsent: app.billSmsConsent && !!app.phone,
       phone: app.phone ?? undefined,
       form1583OnFile: true,
       smsConsent: app.smsConsent && !!app.phone,
@@ -123,8 +156,14 @@ export async function convertApplication(
     throw error;
   }
   // Keep the original online consent time, not the time staff clicked.
-  if (result.client.smsConsentAt) {
-    await db.client.update({ where: { id: result.client.id }, data: { smsConsentAt: app.signedAt } });
+  if (result.client.smsConsentAt || result.client.billSmsConsentAt) {
+    await db.client.update({
+      where: { id: result.client.id },
+      data: {
+        ...(result.client.smsConsentAt && { smsConsentAt: app.signedAt }),
+        ...(result.client.billSmsConsentAt && { billSmsConsentAt: app.signedAt }),
+      },
+    });
   }
   await db.application.update({ where: { id: app.id }, data: { status: "CONVERTED", clientId: result.client.id } });
 

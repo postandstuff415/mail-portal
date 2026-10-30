@@ -20,7 +20,9 @@ postandstuff.com (bought 2026-10-11 at Squarespace; DNS records are edited in Sq
 Match the shop flier: dark background (#1c1a1d), neon teal (#7fe3d4), pink (#f48fb1), yellow (#ffd166); rocket logo. Shop: 4051 Foothill Blvd, Oakland, CA 94601, (415) 725-1603. Pricing on the flier: $15/month, 90-day minimum.
 
 ## Billing rules (owner decisions, locked)
-- Nonprofits only. Clients are never billed; every client belongs to a partner organization that pays.
+- Two kinds of client (`Client.billingType`): NONPROFIT (a partner organization pays; the client never pays) and SELF_PAY (no sponsor; the client pays `Client.monthlyPrice`, default $15, set by staff at activation). Owner decision 2026-10-30.
+- Self-pay: same 3-month minimum (enrollment month counts), then month to month. Billed in advance: a `ClientInvoice` for the month on activation day and on the 1st of each month, emailed if we have an email and texted only if the client agreed to bill texts AND `BILL_SMS_LIVE=true`. Staff mark bills paid. Logic in `src/lib/self-pay.ts`.
+- Case manager is optional on the sign-up page (owner decision 2026-10-30).
 - $15 per active client per month, with a 90-day minimum per client enrollment (bill at least 3 months even if the client leaves sooner).
 - 90-day minimum = option A: billed month by month for the first 3 calendar months of an enrollment (enrollment month counts), never as a lump sum, never twice for one month. Logic in `src/lib/billing.ts`.
 - No late fees. Late payment: pause new enrollments after 30 days past due; may end the agreement after 60.

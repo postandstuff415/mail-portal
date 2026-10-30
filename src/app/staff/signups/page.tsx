@@ -78,7 +78,7 @@ export default async function SignupsPage({ searchParams }: { searchParams: Prom
                       )}
                     </td>
                     <td className="py-2 pr-2">{a.createdAt.toLocaleDateString("en-US", PT)}</td>
-                    <td className="py-2 pr-2">{a.org?.name ?? a.orgOther ?? "-"}</td>
+                    <td className="py-2 pr-2">{a.selfPay ? "Self-pay" : (a.org?.name ?? a.orgOther ?? "-")}</td>
                     <td className="py-2 pr-2">{a.smsConsent ? "yes" : "no"}</td>
                     <td className="py-2">
                       <span className={`rounded-full px-2 py-1 text-xs font-semibold ${STATUS[a.status].style}`}>
@@ -104,7 +104,7 @@ export default async function SignupsPage({ searchParams }: { searchParams: Prom
                   <summary className="cursor-pointer text-lg print:hidden">
                     {a.firstName} {a.lastName}
                     <span className="block text-sm opacity-70">
-                      {a.org?.name ?? a.orgOther ?? "no nonprofit"} · signed up{" "}
+                      {a.selfPay ? "Self-pay (no nonprofit)" : (a.org?.name ?? a.orgOther ?? "no nonprofit")} · signed up{" "}
                       {a.createdAt.toLocaleDateString("en-US", PT)}
                     </span>
                   </summary>
@@ -117,18 +117,25 @@ export default async function SignupsPage({ searchParams }: { searchParams: Prom
                     <dd>{a.email ?? "-"}</dd>
                     <dt className="opacity-70">Case manager</dt>
                     <dd>
-                      {a.caseManagerName} · {a.caseManagerEmail}
-                      {a.delegateConsent ? " (may see mail)" : " (no mail access)"}
+                      {a.caseManagerName || a.caseManagerEmail
+                        ? `${a.caseManagerName ?? ""}${a.caseManagerEmail ? ` · ${a.caseManagerEmail}` : ""}${a.delegateConsent ? " (may see mail)" : " (no mail access)"}`
+                        : "none"}
                     </dd>
                     <dt className="opacity-70">Text alerts</dt>
                     <dd>{a.smsConsent ? "yes" : "no"}</dd>
+                    {a.selfPay && (
+                      <>
+                        <dt className="opacity-70">Bill by text</dt>
+                        <dd>{a.billSmsConsent ? "yes" : "no"}</dd>
+                      </>
+                    )}
                     <dt className="opacity-70">Signed</dt>
                     <dd>
                       &quot;{a.signatureName}&quot; · agreement {a.agreementVersion} ·{" "}
                       {a.signedAt.toLocaleString("en-US", PT)}
                     </dd>
                   </dl>
-                  <ConvertForm applicationId={a.id} orgs={orgs} defaultOrgId={a.org?.id ?? ""} />
+                  <ConvertForm applicationId={a.id} orgs={orgs} defaultOrgId={a.org?.id ?? ""} selfPay={a.selfPay} />
                   <form action={rejectAction.bind(null, a.id)} className="mt-3 print:hidden">
                     <button type="submit" className="text-sm text-[#f48fb1] underline">
                       Remove (spam or duplicate)

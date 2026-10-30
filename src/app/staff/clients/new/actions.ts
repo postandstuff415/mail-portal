@@ -1,8 +1,10 @@
 "use server";
 
 import QRCode from "qrcode";
+import { after } from "next/server";
 import { ZodError } from "zod";
 import { createClient, intakeQrUrl, IntakeError } from "@/lib/intake";
+import { billNow } from "@/lib/self-pay";
 import { requireStaff } from "@/lib/session";
 
 export type NewClientState = {
@@ -19,12 +21,18 @@ export async function createClientAction(_prev: NewClientState, formData: FormDa
       pmbNumber: String(formData.get("pmbNumber") ?? ""),
       firstName: String(formData.get("firstName") ?? ""),
       lastName: String(formData.get("lastName") ?? ""),
+      billingType: formData.get("billingType") === "SELF_PAY" ? "SELF_PAY" : "NONPROFIT",
       orgId: String(formData.get("orgId") ?? ""),
+      monthlyPrice: String(formData.get("monthlyPrice") ?? ""),
+      email: String(formData.get("email") ?? ""),
+      billSmsConsent: formData.get("billSmsConsent") === "on",
       phone: String(formData.get("phone") ?? ""),
       form1583OnFile: formData.get("form1583OnFile") === "on",
       smsConsent: formData.get("smsConsent") === "on",
       idExpiresAt: idExpires ? new Date(`${idExpires}T12:00:00`) : undefined,
     });
+    // Self-pay: send this month's bill right away (after the page responds).
+    if (client.billingType === "SELF_PAY") after(() => billNow(client.id).then(() => undefined));
     const qrDataUrl = await QRCode.toDataURL(intakeQrUrl(client.pmbNumber), { margin: 1, width: 280 });
     return { card: { name: `${client.firstName} ${client.lastName}`, pmbNumber: client.pmbNumber, pin, qrDataUrl } };
   } catch (error) {

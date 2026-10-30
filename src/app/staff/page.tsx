@@ -29,6 +29,7 @@ export default async function StaffHome() {
             c.idExpiresAt && c.idExpiresAt >= new Date() && c.idExpiresAt < soon && "ID expires within 30 days",
             c.status !== "ACTIVE" && c.status.toLowerCase(),
             c.phone && !c.smsConsentAt && "Texts off (no signed agreement)",
+            c.billingType === "SELF_PAY" && !c.email && !c.billSmsConsentAt && "Self-pay: no email or bill texts",
           ].filter(Boolean);
           return (
             <li key={c.id} className="flex items-center justify-between gap-3 rounded-xl border border-[#7fe3d4]/50 p-3">
@@ -36,7 +37,11 @@ export default async function StaffHome() {
                 <Link href={`/staff/clients/${c.id}`} className="underline decoration-[#7fe3d4]/60">
                   <span className="font-mono">{c.pmbNumber}</span> · {c.firstName} {c.lastName}
                 </Link>
-                <span className="block text-sm opacity-70">{c.org.name}</span>
+                <span className="block text-sm opacity-70">
+                  {c.billingType === "SELF_PAY"
+                    ? `Self-pay · $${c.monthlyPrice?.toFixed(2) ?? "?"}/month`
+                    : (c.org?.name ?? "No nonprofit")}
+                </span>
                 {flags.length > 0 && <span className="block text-sm text-[#f48fb1]">{flags.join(" · ")}</span>}
               </span>
               <span className="flex shrink-0 flex-col items-end gap-1 text-sm">
