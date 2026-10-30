@@ -7,6 +7,7 @@ import { ZodError } from "zod";
 import { ipFromHeaders } from "@/lib/audit";
 import { createApplication, SignupError } from "@/lib/signup";
 import { notifyNewSignup } from "@/lib/signup-email";
+import { SELF_PAY_CHOICE } from "./choices";
 
 export type SignupState = { error?: string; values?: Record<string, string> };
 
@@ -30,6 +31,7 @@ export async function signupAction(_prev: SignupState, formData: FormData): Prom
     // Echoed back after an error so the person's own choices stay ticked.
     delegateConsent: get("delegateConsent"),
     smsConsent: get("smsConsent"),
+    billSmsConsent: get("billSmsConsent"),
     agreed: get("agreed"),
   };
   const h = await headers();
@@ -39,6 +41,9 @@ export async function signupAction(_prev: SignupState, formData: FormData): Prom
         ...values,
         delegateConsent: get("delegateConsent") === "on",
         smsConsent: get("smsConsent") === "on",
+        selfPay: get("orgId") === SELF_PAY_CHOICE,
+        billSmsConsent: get("orgId") === SELF_PAY_CHOICE && get("billSmsConsent") === "on",
+        orgId: get("orgId") === SELF_PAY_CHOICE ? "" : get("orgId"),
         agreed: (get("agreed") === "on") as true,
       },
       { ip: ipFromHeaders(h), userAgent: h.get("user-agent") },

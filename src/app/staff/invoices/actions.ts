@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { generateMonthlyInvoices, setInvoiceStatus } from "@/lib/billing";
 import { emailInvoice, InvoiceEmailError } from "@/lib/invoice-email";
+import { markClientInvoicePaid, runSelfPayBilling } from "@/lib/self-pay";
 import { requireStaff } from "@/lib/session";
 
 export async function generateLastMonthAction() {
@@ -32,4 +33,17 @@ export async function markInvoiceAction(invoiceId: string, status: "SENT" | "PAI
   await setInvoiceStatus(staff, invoiceId, status);
   revalidatePath("/staff/invoices");
   revalidatePath(`/invoices/${invoiceId}`);
+}
+
+// Make and send this month's self-pay bills now (the 1st-of-month job does the same; never duplicates).
+export async function runSelfPayBillingAction() {
+  await requireStaff();
+  await runSelfPayBilling();
+  revalidatePath("/staff/invoices");
+}
+
+export async function markClientBillPaidAction(billId: string) {
+  const staff = await requireStaff();
+  await markClientInvoicePaid(staff, billId);
+  revalidatePath("/staff/invoices");
 }

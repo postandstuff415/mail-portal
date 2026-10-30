@@ -1,11 +1,12 @@
 import { randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
-import type { MailType } from "@prisma/client";
+import { Prisma, type MailType } from "@prisma/client";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { writeAudit } from "@/lib/audit";
 import { isStaff, type Viewer } from "@/lib/permissions";
 import { generatePin, normalizePmb } from "@/lib/pin";
+import { DEFAULT_SELF_PAY_PRICE, parsePrice, SelfPayError } from "@/lib/self-pay";
 import { BCRYPT_ROUNDS } from "@/lib/security";
 import { isOptedOutError } from "@/lib/alerts";
 import { sendSms } from "@/lib/sms";
@@ -25,7 +26,22 @@ export const newClientSchema = z.object({
   pmbNumber: z.string().trim().min(1, "Mailbox number is required").max(20),
   firstName: z.string().trim().min(1, "First name is required").max(80),
   lastName: z.string().trim().min(1, "Last name is required").max(80),
-  orgId: z.string().min(1, "Pick the nonprofit"),
+  // Who pays: the nonprofit (orgId required) or the client (monthlyPrice required).
+  billingType: z.enum(["NONPROFIT", "SELF_PAY"]).default("NONPROFIT"),
+  orgId: z
+    .string()
+    .optional()
+    .transform((v) => v || undefined),
+  monthlyPrice: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() || undefined),
+  email: z
+    .union([z.literal(""), z.string().trim().toLowerCase().email("Check the email address.").max(200)])
+    .optional()
+    .transform((v) => v || undefined),
+  // The client agreed to get their monthly bill by text (self-pay).
+  billSmsConsent: z.boolean().default(false),
   phone: z
     .string()
     .trim()
@@ -55,11 +71,23 @@ export async function createClient(viewer: Viewer | null | undefined, input: New
   if (await db.client.findUnique({ where: { pmbNumber }, select: { id: true } })) {
     throw new IntakeError(`Mailbox ${pmbNumber} is already taken.`);
   }
-  if (!(await db.organization.findUnique({ where: { id: data.orgId }, select: { id: true } }))) {
-    throw new IntakeError("That nonprofit doesn't exist.");
+  const selfPay = data.billingType === "SELF_PAY";
+  let monthlyPrice: Prisma.Decimal | null = null;
+  if (selfPay) {
+    try {
+      monthlyPrice = parsePrice(data.monthlyPrice ?? DEFAULT_SELF_PAY_PRICE);
+    } catch (error) {
+      if (error instanceof SelfPayError) throw new IntakeError(error.message);
+      throw error;
+    }
+  } else if (!data.orgId || !(await db.organization.findUnique({ where: { id: data.orgId }, select: { id: true } }))) {
+    throw new IntakeError("Pick the nonprofit that pays, or choose self-pay.");
   }
   if (data.smsConsent && !data.phone) {
     throw new IntakeError("Add a phone number to turn on text alerts.");
+  }
+  if (data.billSmsConsent && !data.phone) {
+    throw new IntakeError("Add a phone number to send bills by text.");
   }
 
   const pin = generatePin();
@@ -68,7 +96,11 @@ export async function createClient(viewer: Viewer | null | undefined, input: New
       pmbNumber,
       firstName: data.firstName,
       lastName: data.lastName,
-      orgId: data.orgId,
+      orgId: selfPay ? null : data.orgId!,
+      billingType: data.billingType,
+      monthlyPrice,
+      email: data.email ?? null,
+      billSmsConsentAt: selfPay && data.billSmsConsent ? new Date() : null,
       phone: data.phone ? normalizePhone(data.phone) : null,
       form1583OnFile: data.form1583OnFile,
       smsConsentAt: data.smsConsent ? new Date() : null,

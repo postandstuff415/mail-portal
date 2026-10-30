@@ -70,3 +70,18 @@ then set `SMS_LIVE=true` in the live site's settings. Run `npm run twilio:check`
 `VERIFIED`.
 
 Wording here must match `src/lib/sms-consent.ts` and the /sms-terms page. Change all three together.
+
+---
+
+## Before turning on self-pay bill texts (BILL_SMS_LIVE)
+
+The campaign above only covers mail alerts. Self-pay bill texts need their own opt-in (the separate
+"bill by text" checkbox on /signup) and must be added to the campaign first. In Twilio, edit the campaign
+(or register a second Account Notification campaign) and add:
+
+- Description line: "We also send self-pay clients who opted in one monthly bill reminder with the amount, due
+  date, and where to pay. Never marketing."
+- Sample: `Post and Stuff: your mailbox bill for November 2026 is $15.00, due Nov 11. Pay at 4051 Foothill Blvd, Oakland. Questions: (415) 725-1603. Reply STOP to opt out.`
+- Opt-in wording: the bill-text checkbox text in `src/lib/self-pay.ts` (BILL_SMS_CONSENT_TEXT).
+
+Also add that wording to /sms-terms. Only then set BILL_SMS_LIVE=true in Vercel.

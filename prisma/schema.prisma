@@ -16,6 +16,12 @@ enum BillingTerms {
   NET60
 }
 
+// Who pays for a client's mailbox: their partner nonprofit, or the client.
+enum BillingType {
+  NONPROFIT
+  SELF_PAY
+}
+
 enum ClientStatus {
   ACTIVE
   INACTIVE
@@ -112,8 +118,16 @@ model Client {
   firstName      String
   lastName       String
   phone          String?
+  // Where self-pay bills are emailed (from the sign-up, or typed in by staff).
+  email          String?
   pinHash        String
-  orgId          String
+  // Null for self-pay clients (no sponsoring nonprofit).
+  orgId          String?
+  billingType    BillingType  @default(NONPROFIT)
+  // Self-pay only: what the client pays per month, set by staff at activation.
+  monthlyPrice   Decimal?     @db.Decimal(10, 2)
+  // When the client agreed to get their monthly bill by text. Null = never text bills.
+  billSmsConsentAt DateTime?
   status         ClientStatus @default(ACTIVE)
   form1583OnFile Boolean      @default(false)
   idExpiresAt    DateTime?
@@ -130,7 +144,8 @@ model Client {
   enrolledAt     DateTime     @default(now())
   endedAt        DateTime?
 
-  org          Organization  @relation(fields: [orgId], references: [id])
+  org            Organization?   @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  clientInvoices ClientInvoice[]
   mailItems    MailItem[]
   delegates    Delegate[]
   auditLogs    AuditLog[]
@@ -308,6 +323,10 @@ model Application {
   signatureName    String
   signedAt         DateTime          @default(now())
   smsConsent       Boolean           @default(false)
+  // No sponsoring nonprofit: the client pays the monthly price themselves.
+  selfPay          Boolean           @default(false)
+  // Self-pay: agreed to get the monthly bill by text.
+  billSmsConsent   Boolean           @default(false)
   ip               String?
   userAgent        String?
   status           ApplicationStatus @default(PENDING)
@@ -318,4 +337,24 @@ model Application {
   client Client?       @relation(fields: [clientId], references: [id])
 
   @@index([status, createdAt])
+}
+
+// A self-pay client's monthly bill, sent by email and/or text.
+model ClientInvoice {
+  id          String        @id @default(cuid())
+  clientId    String
+  // Billing month, "YYYY-MM" (Pacific time). One bill per client per month.
+  month       String
+  amount      Decimal       @db.Decimal(10, 2)
+  dueDate     DateTime
+  status      InvoiceStatus @default(DRAFT)
+  emailedAt   DateTime?
+  textedAt    DateTime?
+  paidAt      DateTime?
+  createdAt   DateTime      @default(now())
+
+  client Client @relation(fields: [clientId], references: [id])
+
+  @@unique([clientId, month])
+  @@index([status])
 }

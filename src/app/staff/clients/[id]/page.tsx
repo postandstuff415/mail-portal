@@ -3,11 +3,13 @@ import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { MailList } from "@/components/mail-list";
 import { StaffNav } from "@/components/staff-nav";
+import { isOverdue, monthKey, monthLabel } from "@/lib/billing";
 import { db } from "@/lib/db";
 import { activeDelegates } from "@/lib/delegates";
 import { mailForClient } from "@/lib/mail-queries";
 import { requireStaff } from "@/lib/session";
 import { endEnrollmentAction, reenrollAction, revokeDelegateAction } from "./actions";
+import { BillButtons, BillingForm, BillThisMonthButton } from "./billing-form";
 import { DelegateForm } from "./delegate-form";
 
 const PT = { timeZone: "America/Los_Angeles" } as const;
@@ -19,7 +21,7 @@ export default async function StaffClientPage({ params }: { params: Promise<{ id
   const client = await db.client.findUnique({ where: { id }, include: { org: { select: { name: true } } } });
   if (!client) notFound();
 
-  const [delegates, caseManagers, items] = await Promise.all([
+  const [delegates, caseManagers, items, orgs, bills] = await Promise.all([
     activeDelegates(id),
     db.user.findMany({
       where: { role: "CASE_MANAGER" },
@@ -27,7 +29,11 @@ export default async function StaffClientPage({ params }: { params: Promise<{ id
       include: { org: { select: { name: true } } },
     }),
     mailForClient(id),
+    db.organization.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    db.clientInvoice.findMany({ where: { clientId: id }, orderBy: { month: "desc" }, take: 24 }),
   ]);
+  const selfPay = client.billingType === "SELF_PAY";
+  const thisMonth = monthKey(new Date());
   const delegateIds = new Set(delegates.map((d) => d.userId));
 
   return (
@@ -36,10 +42,14 @@ export default async function StaffClientPage({ params }: { params: Promise<{ id
       <h1 className="text-2xl font-bold">
         {client.firstName} {client.lastName} <span className="text-lg opacity-70">· {client.pmbNumber}</span>
       </h1>
-      <p className="opacity-80">{client.org.name}</p>
+      <p className="opacity-80">
+        {selfPay ? `Self-pay · $${client.monthlyPrice?.toFixed(2) ?? "?"}/month` : (client.org?.name ?? "No nonprofit")}
+      </p>
       <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
         <dt className="opacity-70">Phone</dt>
         <dd>{client.phone ?? "none"}</dd>
+        <dt className="opacity-70">Email</dt>
+        <dd>{client.email ?? "none"}</dd>
         <dt className="opacity-70">Text alerts</dt>
         <dd>{client.smsConsentAt ? `on (signed ${client.smsConsentAt.toLocaleDateString("en-US", PT)})` : "off"}</dd>
         <dt className="opacity-70">PS 1583</dt>
@@ -66,7 +76,7 @@ export default async function StaffClientPage({ params }: { params: Promise<{ id
         </button>
         {client.status === "ACTIVE" && (
           <span className="mt-1 block text-sm opacity-70">
-            The nonprofit is still billed through the first 3 months of the enrollment.
+            {selfPay ? "The client" : "The nonprofit"} is still billed through the first 3 months of the enrollment.
           </span>
         )}
       </form>
@@ -78,6 +88,50 @@ export default async function StaffClientPage({ params }: { params: Promise<{ id
           Reset PIN
         </Link>
       </p>
+
+      <section className="mt-6 rounded-xl border border-[#ffd166]/50 p-4">
+        <h2 className="mb-2 text-lg font-semibold">Billing</h2>
+        <BillingForm
+          clientId={id}
+          orgs={orgs}
+          orgId={client.orgId ?? ""}
+          selfPay={selfPay}
+          price={client.monthlyPrice?.toFixed(2) ?? "15.00"}
+          email={client.email ?? ""}
+          billTexts={!!client.billSmsConsentAt}
+        />
+        {selfPay && (
+          <div className="mt-4">
+            <h3 className="mb-2 font-semibold">Bills</h3>
+            {!bills.some((b) => b.month === thisMonth) && (
+              <div className="mb-2">
+                <BillThisMonthButton clientId={id} label={`Bill ${monthLabel(thisMonth)} now`} />
+              </div>
+            )}
+            {bills.length === 0 && <p className="opacity-80">No bills yet.</p>}
+            <ul className="flex flex-col gap-2">
+              {bills.map((b) => (
+                <li key={b.id} className="rounded-lg border border-[#7fe3d4]/30 p-2">
+                  <div className="flex justify-between gap-3">
+                    <span>{monthLabel(b.month)}</span>
+                    <span className="font-semibold">${b.amount.toFixed(2)}</span>
+                  </div>
+                  <p className="text-sm opacity-80">
+                    due {b.dueDate.toLocaleDateString("en-US", PT)} ·{" "}
+                    <span className={isOverdue(b) ? "font-bold text-[#f48fb1]" : ""}>
+                      {isOverdue(b) ? "OVERDUE" : b.status.toLowerCase()}
+                    </span>
+                    {b.emailedAt && ` · emailed ${b.emailedAt.toLocaleDateString("en-US", PT)}`}
+                    {b.textedAt && ` · texted ${b.textedAt.toLocaleDateString("en-US", PT)}`}
+                    {b.paidAt && ` · paid ${b.paidAt.toLocaleDateString("en-US", PT)}`}
+                  </p>
+                  {b.status !== "PAID" && <BillButtons clientId={id} billId={b.id} sent={!!(b.emailedAt || b.textedAt)} />}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
 
       <section className="mt-6 rounded-xl border border-[#7fe3d4]/40 p-4">
         <h2 className="mb-2 text-lg font-semibold">Who can see their mail</h2>
