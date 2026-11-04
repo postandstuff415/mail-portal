@@ -5,11 +5,14 @@ export function IntakeCard({
   pmbNumber,
   qrDataUrl,
   pin,
+  note,
 }: {
   name: string;
   pmbNumber: string;
   qrDataUrl: string;
   pin?: string;
+  // e.g. the "Lucky 6" free-months line for a winner.
+  note?: string;
 }) {
   return (
     <div className="mx-auto w-full max-w-sm rounded-2xl bg-white p-5 text-black print:max-w-none print:rounded-none">
@@ -30,6 +33,7 @@ export function IntakeCard({
           <p className="font-mono text-3xl font-bold tracking-widest">{pin}</p>
         </div>
       )}
+      {note && <p className="mt-4 rounded-lg bg-black p-2 text-center font-bold text-white">{note}</p>}
       <p className="mt-4 text-center text-sm">
         Check your mail at <strong>postandstuff.com</strong> — scan the code to log in.
       </p>

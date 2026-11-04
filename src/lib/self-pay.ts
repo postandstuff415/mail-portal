@@ -3,6 +3,7 @@ import { billingFor, MINIMUM_MONTHS, addMonths, monthKey, monthLabel } from "@/l
 import { db } from "@/lib/db";
 import { escapeHtml, sendEmail, type Email, type EmailSender } from "@/lib/email";
 import { isOptedOutError } from "@/lib/alerts";
+import { isFreeMonth } from "@/lib/lucky-six";
 import { isStaff, type Viewer } from "@/lib/permissions";
 import { sendSms, smsConfigured, type SmsSender } from "@/lib/sms";
 
@@ -53,6 +54,8 @@ export async function generateClientInvoice(clientId: string, month: string, now
   const client = await db.client.findUnique({ where: { id: clientId } });
   if (!client || client.billingType !== "SELF_PAY" || !client.monthlyPrice) return null;
   if (!billingFor(client, month).billed) return null;
+  // "Lucky 6" winners: their first 6 months are free, so no bill.
+  if (isFreeMonth(client, month)) return null;
   try {
     return await db.clientInvoice.create({
       data: { clientId, month, amount: client.monthlyPrice, dueDate: new Date(now.getTime() + SELF_PAY_DUE_DAYS * DAY_MS) },

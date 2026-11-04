@@ -34,6 +34,9 @@ export function SiteFooter() {
         <Link href="/agreement" className="underline">
           Mailbox agreement
         </Link>
+        <Link href="/lucky-six" className="underline">
+          Lucky 6 rules
+        </Link>
       </p>
     </footer>
   );

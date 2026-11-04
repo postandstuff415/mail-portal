@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AgreementText } from "@/components/agreement-text";
+import { LuckySixBanner } from "@/components/lucky-six-banner";
 import { PublicPage } from "@/components/public-page";
 import { CURRENT_AGREEMENT } from "@/lib/agreement";
 import { db } from "@/lib/db";
@@ -19,6 +20,7 @@ export default async function SignupPage() {
         Free for clients of our partner nonprofits. No nonprofit? You can still sign up and pay monthly yourself. Fill
         this out (with your case manager if you have one), then bring two IDs to sign USPS Form 1583 in person.
       </p>
+      <LuckySixBanner />
       <SignupForm orgs={orgs} agreement={<AgreementText agreement={CURRENT_AGREEMENT} />} smsConsentText={SMS_CONSENT_TEXT}
         billSmsConsentText={BILL_SMS_CONSENT_TEXT}
       />

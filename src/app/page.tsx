@@ -1,5 +1,9 @@
 import Link from "next/link";
+import { LuckySixBanner } from "@/components/lucky-six-banner";
 import { SiteFooter } from "@/components/public-page";
+
+// The Lucky 6 banner shows a live count, so build this page on each visit.
+export const dynamic = "force-dynamic";
 
 // Public homepage. Colors follow the Post and Stuff flier: dark background,
 // neon pink / teal / yellow.
@@ -23,6 +27,8 @@ export default function Home() {
           A real street address for your mail in Oakland, held securely and viewable on your phone.
         </p>
 
+        <LuckySixBanner />
+
         <Link
           href="/login"
           className="flex h-14 items-center justify-center rounded-md border-2 border-[#7fe3d4] text-lg font-semibold text-[#7fe3d4] shadow-[0_0_12px_#7fe3d4]"
@@ -33,7 +39,7 @@ export default function Home() {
           href="/signup"
           className="flex h-14 items-center justify-center rounded-md border-2 border-[#f48fb1] text-lg font-semibold text-[#f48fb1]"
         >
-          New? Sign up with your case manager
+          New? Sign up for a mailbox
         </Link>
 
         <ul className="flex flex-col gap-3 text-[#e8f4f0]">

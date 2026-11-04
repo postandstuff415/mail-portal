@@ -39,7 +39,7 @@ export default async function StaffHome() {
                 </Link>
                 <span className="block text-sm opacity-70">
                   {c.billingType === "SELF_PAY"
-                    ? `Self-pay · $${c.monthlyPrice?.toFixed(2) ?? "?"}/month`
+                    ? `Self-pay · $${c.monthlyPrice?.toFixed(2) ?? "?"}/month${c.freeMonths > 0 ? " · Lucky 6 (free months)" : ""}`
                     : (c.org?.name ?? "No nonprofit")}
                 </span>
                 {flags.length > 0 && <span className="block text-sm text-[#f48fb1]">{flags.join(" · ")}</span>}

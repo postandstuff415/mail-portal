@@ -10,6 +10,7 @@ import { mailForClient } from "@/lib/mail-queries";
 import { requireStaff } from "@/lib/session";
 import { endEnrollmentAction, reenrollAction, revokeDelegateAction } from "./actions";
 import { BillButtons, BillingForm, BillThisMonthButton } from "./billing-form";
+import { freeThrough } from "@/lib/lucky-six";
 import { DelegateForm } from "./delegate-form";
 
 const PT = { timeZone: "America/Los_Angeles" } as const;
@@ -48,6 +49,15 @@ export default async function StaffClientPage({ params }: { params: Promise<{ id
       <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
         <dt className="opacity-70">Phone</dt>
         <dd>{client.phone ?? "none"}</dd>
+        {client.luckyNumber !== null && (
+          <>
+            <dt className="opacity-70">Lucky 6</dt>
+            <dd>
+              #{client.luckyNumber}
+              {freeThrough(client) ? ` · WINNER: free through ${freeThrough(client)}` : " · not a winner"}
+            </dd>
+          </>
+        )}
         <dt className="opacity-70">Email</dt>
         <dd>{client.email ?? "none"}</dd>
         <dt className="opacity-70">Text alerts</dt>

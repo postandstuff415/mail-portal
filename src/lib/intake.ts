@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { writeAudit } from "@/lib/audit";
 import { isStaff, type Viewer } from "@/lib/permissions";
+import { assignLuckyNumber, type LuckyResult } from "@/lib/lucky-six";
 import { generatePin, normalizePmb } from "@/lib/pin";
 import { DEFAULT_SELF_PAY_PRICE, parsePrice, SelfPayError } from "@/lib/self-pay";
 import { BCRYPT_ROUNDS } from "@/lib/security";
@@ -116,7 +117,15 @@ export async function createClient(viewer: Viewer | null | undefined, input: New
       if (isOptedOutError(error)) await db.client.update({ where: { id: client.id }, data: { smsConsentAt: null } });
     });
   }
-  return { client, pin };
+  // "Lucky 6" promo: new self-pay clients get a place in line; every 6th wins.
+  let lucky: LuckyResult | null = null;
+  if (client.billingType === "SELF_PAY") {
+    lucky = await assignLuckyNumber(client.id).catch((error) => {
+      console.error("Lucky 6 number failed:", error instanceof Error ? error.message : error);
+      return null;
+    });
+  }
+  return { client, pin, lucky };
 }
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;

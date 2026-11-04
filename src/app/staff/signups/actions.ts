@@ -11,7 +11,7 @@ import { SIGNUP_ALERT_TO, sendTestSignupAlert } from "@/lib/signup-email";
 
 export type ConvertState = {
   error?: string;
-  card?: { name: string; pmbNumber: string; pin: string; qrDataUrl: string };
+  card?: { name: string; pmbNumber: string; pin: string; qrDataUrl: string; note?: string };
   delegateAdded?: boolean;
 };
 
@@ -20,7 +20,7 @@ export async function convertAction(applicationId: string, _prev: ConvertState, 
   const staff = await requireStaff();
   const idExpires = String(formData.get("idExpiresAt") ?? "");
   try {
-    const { client, pin, delegateAdded } = await convertApplication(staff, applicationId, {
+    const { client, pin, delegateAdded, lucky } = await convertApplication(staff, applicationId, {
       pmbNumber: String(formData.get("pmbNumber") ?? ""),
       billingType: formData.get("billingType") === "SELF_PAY" ? "SELF_PAY" : "NONPROFIT",
       orgId: String(formData.get("orgId") ?? ""),
@@ -32,7 +32,11 @@ export async function convertAction(applicationId: string, _prev: ConvertState, 
     // Self-pay: send this month's bill right away (after the page responds).
     if (client.billingType === "SELF_PAY") after(() => billNow(client.id).then(() => undefined));
     const qrDataUrl = await QRCode.toDataURL(intakeQrUrl(client.pmbNumber), { margin: 1, width: 280 });
-    return { card: { name: `${client.firstName} ${client.lastName}`, pmbNumber: client.pmbNumber, pin, qrDataUrl }, delegateAdded };
+    const note = lucky?.won ? `LUCKY 6! Your first 6 months are free (through ${lucky.freeThrough}).` : undefined;
+    return {
+      card: { name: `${client.firstName} ${client.lastName}`, pmbNumber: client.pmbNumber, pin, qrDataUrl, note },
+      delegateAdded,
+    };
   } catch (error) {
     if (error instanceof SignupError) return { error: error.message };
     throw error;
