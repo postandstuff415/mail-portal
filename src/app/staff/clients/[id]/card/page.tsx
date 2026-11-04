@@ -6,6 +6,7 @@ import { PrintButton } from "@/components/print-button";
 import { StaffNav } from "@/components/staff-nav";
 import { db } from "@/lib/db";
 import { intakeQrUrl } from "@/lib/intake";
+import { freeThrough } from "@/lib/lucky-six";
 import { requireStaff } from "@/lib/session";
 
 // Reprint a client's card or shelf label. PINs are never stored readable, so
@@ -20,7 +21,12 @@ export default async function ClientCardPage({ params }: { params: Promise<{ id:
   return (
     <AppShell name={viewer.name}>
       <StaffNav />
-      <IntakeCard name={`${client.firstName} ${client.lastName}`} pmbNumber={client.pmbNumber} qrDataUrl={qrDataUrl} />
+      <IntakeCard
+        name={`${client.firstName} ${client.lastName}`}
+        pmbNumber={client.pmbNumber}
+        qrDataUrl={qrDataUrl}
+        note={freeThrough(client) ? `LUCKY 6! Your first 6 months are free (through ${freeThrough(client)}).` : undefined}
+      />
       <PrintButton />
     </AppShell>
   );

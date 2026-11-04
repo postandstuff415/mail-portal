@@ -120,7 +120,11 @@ export async function endEnrollment(viewer: Viewer | null | undefined, clientId:
 // A returning client starts a new enrollment (and a new 90-day minimum).
 export async function reenroll(viewer: Viewer | null | undefined, clientId: string, now = new Date()) {
   if (!isStaff(viewer)) throw new BillingError("Staff only.");
-  await db.client.update({ where: { id: clientId }, data: { status: "ACTIVE", enrolledAt: now, endedAt: null } });
+  // A new enrollment never brings back "Lucky 6" free months.
+  await db.client.update({
+    where: { id: clientId },
+    data: { status: "ACTIVE", enrolledAt: now, endedAt: null, freeMonths: 0 },
+  });
 }
 
 // Who may see an invoice: staff, or that nonprofit's admin accounts.
